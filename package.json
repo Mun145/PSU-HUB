@@ -1,0 +1,13 @@
+{
+    "name": "psu-hub",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "start:backend": "npm start --prefix psu-hub-backend",
+        "start:frontend": "npm start --prefix psu-hub-frontend",
+        "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+    },
+    "devDependencies": {
+        "concurrently": "^7.6.0"
+    }
+}

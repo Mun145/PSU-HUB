@@ -1,5 +1,6 @@
+// psu-hub-backend/models/Event.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); // Import the sequelize instance
+const sequelize = require('../config/db');
 
 const Event = sequelize.define('Event', {
   id: {
@@ -26,6 +27,11 @@ const Event = sequelize.define('Event', {
   qr_code: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected', 'published'),
+    allowNull: false,
+    defaultValue: 'pending'
   }
 }, {
   timestamps: true

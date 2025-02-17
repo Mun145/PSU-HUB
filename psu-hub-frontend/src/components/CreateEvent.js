@@ -1,5 +1,6 @@
-// src/components/CreateEvent.js
+// psu-hub-frontend/src/components/CreateEvent.js
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 function CreateEvent() {
   const [title, setTitle] = useState('');
@@ -23,24 +24,44 @@ function CreateEvent() {
       const data = await response.json();
       console.log(data);
       if (response.ok) {
-        alert('Event created successfully');
+        toast.success('Event created successfully');
       } else {
-        alert(data.message || 'Event creation failed');
+        toast.error(data.message || 'Event creation failed');
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Error creating event');
+      toast.error('Error creating event');
     }
   };
 
   return (
     <form onSubmit={handleCreateEvent}>
       <h2>Create Event</h2>
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" /><br />
-      <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" /><br />
-      <input value={date} onChange={(e) => setDate(e.target.value)} placeholder="Date (YYYY-MM-DD)" /><br />
-      <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location" /><br />
-      <input value={qr_code} onChange={(e) => setQrCode(e.target.value)} placeholder="QR Code" /><br />
+      <input 
+        value={title} 
+        onChange={(e) => setTitle(e.target.value)} 
+        placeholder="Title" 
+      /><br />
+      <input 
+        value={description} 
+        onChange={(e) => setDescription(e.target.value)} 
+        placeholder="Description" 
+      /><br />
+      <input 
+        value={date} 
+        onChange={(e) => setDate(e.target.value)} 
+        placeholder="Date (YYYY-MM-DD)" 
+      /><br />
+      <input 
+        value={location} 
+        onChange={(e) => setLocation(e.target.value)} 
+        placeholder="Location" 
+      /><br />
+      <input 
+        value={qr_code} 
+        onChange={(e) => setQrCode(e.target.value)} 
+        placeholder="QR Code" 
+      /><br />
       <button type="submit">Create Event</button>
     </form>
   );

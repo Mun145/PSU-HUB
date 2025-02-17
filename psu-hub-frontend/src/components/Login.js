@@ -1,5 +1,7 @@
-// src/components/Login.js
+// psu-hub-frontend/src/components/Login.js
 import React, { useState } from 'react';
+import jwt_decode from 'jwt-decode';
+import { toast } from 'react-toastify';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -16,15 +18,18 @@ function Login() {
       const data = await response.json();
       console.log(data);
       if (response.ok) {
-        // Save the token in localStorage
         localStorage.setItem('token', data.token);
-        alert('Login successful');
+        const decoded = jwt_decode(data.token);
+        if (decoded && decoded.role) {
+          localStorage.setItem('role', decoded.role);
+        }
+        toast.success('Login successful');
       } else {
-        alert(data.message || 'Login failed');
+        toast.error(data.message || 'Login failed');
       }
     } catch (error) {
       console.error('Error during login:', error);
-      alert('Error during login');
+      toast.error('Error during login');
     }
   };
 

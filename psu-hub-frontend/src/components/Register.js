@@ -1,5 +1,6 @@
-// src/components/Register.js
+// psu-hub-frontend/src/components/Register.js
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 function Register() {
   const [name, setName] = useState('');
@@ -18,13 +19,13 @@ function Register() {
       const data = await response.json();
       console.log(data);
       if (response.ok) {
-        alert('User registered successfully');
+        toast.success('User registered successfully');
       } else {
-        alert(data.message || 'Registration failed');
+        toast.error(data.message || 'Registration failed');
       }
     } catch (error) {
       console.error('Error during registration:', error);
-      alert('Error during registration');
+      toast.error('Error during registration');
     }
   };
 
@@ -52,6 +53,7 @@ function Register() {
       <select value={role} onChange={(e) => setRole(e.target.value)}>
         <option value="faculty">Faculty</option>
         <option value="admin">Admin</option>
+        <option value="psu_admin">PSU Admin (Board Member)</option>
       </select><br />
       <button type="submit">Register</button>
     </form>

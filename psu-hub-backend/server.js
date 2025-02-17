@@ -7,6 +7,8 @@ const sequelize = require('./config/db'); // Sequelize instance
 const User = require('./models/User');
 const Event = require('./models/Event');
 const Attendance = require('./models/Attendance');
+const surveyRoutes = require('./routes/surveyRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 
@@ -42,6 +44,8 @@ const attendanceRoutes = require('./routes/attendanceRoutes');
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/surveys', surveyRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3001;
