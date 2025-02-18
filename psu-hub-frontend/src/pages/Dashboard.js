@@ -146,81 +146,75 @@ function Dashboard() {
   }
 
   // 2) Admin Dashboard
-  if (userRole === 'admin') {
-    const awaitingPublish = events.filter((e) => e.status === 'approved');
+// Within your Dashboard.js, inside the Admin condition (userRole === 'admin'):
+if (userRole === 'admin') {
+  const awaitingPublish = events.filter((e) => e.status === 'approved');
 
-    // Create chart data
-    const chartData = {
-      labels: analytics
-        ? ['Total Events', 'Approved Events', 'Attendance', 'Users']
-        : [],
-      datasets: [
-        {
-          label: 'Analytics',
-          data: analytics
-            ? [
-                analytics.totalEvents,
-                analytics.approvedEvents,
-                analytics.totalAttendance,
-                analytics.totalUsers,
-              ]
-            : [],
-          fill: false,
-          backgroundColor: 'rgb(75, 192, 192)',
-          borderColor: 'rgba(75, 192, 192, 0.2)',
-        },
-      ],
-    };
+  const chartData = {
+    labels: analytics ? ['Total Events', 'Approved Events', 'Attendance', 'Users'] : [],
+    datasets: [
+      {
+        label: 'Analytics',
+        data: analytics ? [analytics.totalEvents, analytics.approvedEvents, analytics.totalAttendance, analytics.totalUsers] : [],
+        fill: false,
+        backgroundColor: 'rgb(75, 192, 192)',
+        borderColor: 'rgba(75, 192, 192, 0.2)',
+      },
+    ],
+  };
 
-    return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Admin Dashboard
-        </Typography>
+  const handleEdit = (eventId) => {
+    toast.info(`Edit functionality for event ${eventId} is not yet implemented.`);
+    // In a real app, navigate to an event editing page or open a dialog.
+  };
 
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Events Awaiting Publishing
-        </Typography>
-        {awaitingPublish.length === 0 ? (
-          <Typography>No events awaiting publishing.</Typography>
-        ) : (
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            {awaitingPublish.map((event) => (
-              <Grid item xs={12} sm={6} md={4} key={event.id}>
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6">{event.title}</Typography>
-                  <Typography variant="body2">{event.description}</Typography>
-                  <Typography>
-                    Date: {new Date(event.date).toLocaleDateString()}
-                  </Typography>
-                  <Typography>Status: {event.status}</Typography>
-                  <Button
-                    variant="contained"
-                    onClick={() => publishEvent(event.id)}
-                    sx={{ mt: 1 }}
-                  >
-                    Publish Event
-                  </Button>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        )}
+  const handleDelete = (eventId) => {
+    // In a real app, send a DELETE request to your backend.
+    toast.success(`Event ${eventId} deleted successfully`);
+    // Optionally, remove the event from state.
+  };
 
-        <Typography variant="h6" sx={{ mt: 4 }}>
-          Analytics Overview
-        </Typography>
-        {analytics ? (
-          <Box sx={{ maxWidth: '600px', mt: 2 }}>
-            {/* unique key to avoid reuse of same canvas */}
-            <Line key="adminAnalyticsChart" data={chartData} />
-          </Box>
-        ) : (
-          <Typography>Loading analytics...</Typography>
-        )}
-      </Container>
-    );
-  }
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>Admin Dashboard</Typography>
+      <Typography variant="h6" sx={{ mt: 2 }}>Events Awaiting Publishing</Typography>
+      {awaitingPublish.length === 0 ? (
+        <Typography>No events awaiting publishing.</Typography>
+      ) : (
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          {awaitingPublish.map((event) => (
+            <Grid item xs={12} sm={6} md={4} key={event.id}>
+              <Paper sx={{ p: 2 }}>
+                <Typography variant="h6">{event.title}</Typography>
+                <Typography variant="body2">{event.description}</Typography>
+                <Typography>Date: {new Date(event.date).toLocaleDateString()}</Typography>
+                <Typography>Status: {event.status}</Typography>
+                <Button variant="contained" onClick={() => publishEvent(event.id)} sx={{ mt: 1, mr: 1 }}>
+                  Publish
+                </Button>
+                <Button variant="outlined" onClick={() => handleEdit(event.id)} sx={{ mt: 1, mr: 1 }}>
+                  Edit
+                </Button>
+                <Button variant="outlined" color="error" onClick={() => handleDelete(event.id)} sx={{ mt: 1 }}>
+                  Delete
+                </Button>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      <Typography variant="h6" sx={{ mt: 4 }}>Analytics Overview</Typography>
+      {analytics ? (
+        <Box sx={{ maxWidth: '600px', mt: 2 }}>
+          <Line key="adminAnalyticsChart" data={chartData} />
+        </Box>
+      ) : (
+        <Typography>Loading analytics...</Typography>
+      )}
+    </Container>
+  );
+}
+
 
   // 3) PSU_Admin Dashboard
   if (userRole === 'psu_admin') {

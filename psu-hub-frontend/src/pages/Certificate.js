@@ -1,6 +1,6 @@
 // psu-hub-frontend/src/pages/Certificate.js
 import React from 'react';
-import { Container, Paper, Typography, Button } from '@mui/material';
+import { Container, Paper, Typography, Button, Fade } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -11,27 +11,50 @@ const Certificate = () => {
   if (!certificate) {
     toast.error("No certificate data found.");
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4">Certificate</Typography>
-          <Typography>No certificate data available. Please complete the survey to generate your certificate.</Typography>
+          <Typography variant="h5">Certificate</Typography>
+          <Typography>
+            No certificate data available. Please complete the survey to generate your certificate.
+          </Typography>
         </Paper>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>Certificate of Participation</Typography>
-        <Typography><strong>Certificate ID:</strong> {certificate.certificateId}</Typography>
-        <Typography><strong>Event ID:</strong> {certificate.eventId}</Typography>
-        <Typography><strong>User ID:</strong> {certificate.userId}</Typography>
-        <Typography><strong>Issued At:</strong> {new Date(certificate.issuedAt).toLocaleString()}</Typography>
-        <Typography>{certificate.message}</Typography>
-        <Button variant="contained" onClick={() => window.print()} sx={{ mt: 2 }}>Print Certificate</Button>
-      </Paper>
-    </Container>
+    <Fade in={true} timeout={1000}>
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h4" gutterBottom>
+            Certificate of Participation
+          </Typography>
+          <Typography variant="body1">
+            <strong>Certificate ID:</strong> {certificate.certificateId}
+          </Typography>
+          <Typography variant="body1">
+            <strong>Event ID:</strong> {certificate.eventId}
+          </Typography>
+          <Typography variant="body1">
+            <strong>User ID:</strong> {certificate.userId}
+          </Typography>
+          <Typography variant="body1">
+            <strong>Issued At:</strong> {new Date(certificate.issuedAt).toLocaleString()}
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            {certificate.message}
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => window.print()}
+            sx={{ mt: 3 }}
+          >
+            Print Certificate
+          </Button>
+        </Paper>
+      </Container>
+    </Fade>
   );
 };
 

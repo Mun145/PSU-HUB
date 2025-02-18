@@ -2,6 +2,8 @@ require('dotenv').config(); // Load environment variables
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./config/db'); // Sequelize instance
+const rateLimiter = require('./middleware/rateLimiter');
+const logger = require('./utils/logger');
 
 // Import models
 const User = require('./models/User');
@@ -11,6 +13,9 @@ const surveyRoutes = require('./routes/surveyRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
+
+// Apply rate limiting to all routes
+app.use(rateLimiter);
 
 // Middleware
 app.use(cors());
@@ -27,14 +32,15 @@ Attendance.belongsTo(User, { foreignKey: 'user_id' });
 Event.hasMany(Attendance, { foreignKey: 'event_id' });
 Attendance.belongsTo(Event, { foreignKey: 'event_id' });
 
-// Check DB connection and sync models
+// Check DB connection
 sequelize.authenticate()
-  .then(() => console.log('✅ MySQL Database connected!'))
-  .catch(err => console.error('❌ MySQL Connection Error:', err));
+  .then(() => logger.info('✅ MySQL Database connected!'))
+  .catch(err => logger.error('❌ MySQL Connection Error', { error: err.message }));
 
+// Sync models
 sequelize.sync({ alter: true })
-  .then(() => console.log('✅ Database synchronized with models'))
-  .catch(err => console.error('❌ Error syncing database:', err));
+  .then(() => logger.info('✅ Database synchronized with models'))
+  .catch(err => logger.error('❌ Error syncing database', { error: err.message }));
 
 // Import and register routes
 const userRoutes = require('./routes/userRoutes');
@@ -47,8 +53,14 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+// Error-handling middleware (last)
+app.use((err, req, res, next) => {
+  logger.error(err.message, { stack: err.stack });
+  res.status(500).send('Something broke!');
+});
+
 // Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on port ${PORT}`);
+  logger.info(`🚀 Backend server running on port ${PORT}`);
 });

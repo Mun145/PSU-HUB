@@ -2,16 +2,17 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // POST /api/surveys/submit
 // Simulate saving survey responses and generating a certificate.
 router.post('/submit', auth, async (req, res) => {
   try {
-    // Expect survey data: eventId and responses (object or array)
+    // Expecting survey data: eventId and responses (object or array)
     const { eventId, responses } = req.body;
     
-    // Here you would normally save the survey responses to your database.
-    // For this simulation, we assume it's saved successfully.
+    // Simulate saving survey responses...
+    // For this example, we assume it is successful.
     
     // Simulate certificate generation:
     const certificate = {
@@ -22,15 +23,11 @@ router.post('/submit', auth, async (req, res) => {
       message: "Certificate of Participation"
     };
     
-    res.status(201).json({ 
-      message: 'Survey submitted and certificate generated', 
-      certificate 
-    });
+    logger.info('Survey submitted and certificate generated', { user: req.user.id, eventId });
+    res.status(201).json({ message: 'Survey submitted and certificate generated', certificate });
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error submitting survey', 
-      error: error.message 
-    });
+    logger.error('Error submitting survey', { error: error.message });
+    res.status(500).json({ message: 'Error submitting survey', error: error.message });
   }
 });
 
