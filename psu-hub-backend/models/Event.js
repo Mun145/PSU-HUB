@@ -1,4 +1,4 @@
-// psu-hub-backend/models/Event.js
+// models/Event.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -25,13 +25,16 @@ const Event = sequelize.define('Event', {
     allowNull: false
   },
   qr_code: {
-    type: DataTypes.STRING,
-    allowNull: true
+    type: DataTypes.TEXT
   },
   status: {
-    type: DataTypes.ENUM('pending', 'approved', 'rejected', 'published'),
-    allowNull: false,
+    type: DataTypes.ENUM('pending', 'approved', 'rejected', 'published', 'draft'),
     defaultValue: 'pending'
+  },
+  // NEW: Add an imageUrl field (optional)
+  imageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true

@@ -1,14 +1,15 @@
+// config/db.js
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME,     // e.g. 'psu_hub'
-  process.env.DB_USER,     // e.g. 'root'
-  process.env.DB_PASS,     // e.g. 'Alghamdi12'
+  process.env.DB_NAME, 
+  process.env.DB_USER, 
+  process.env.DB_PASS, 
   {
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST,
     dialect: 'mysql',
-    logging: false, // set to true if you want SQL logs
+    logging: false
   }
 );
 

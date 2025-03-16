@@ -1,2 +1,13 @@
+# Dependencies
 node_modules/
+
+# Env
 .env
+
+# Uploads folder (for user profile images, event images, etc.)
+uploads/
+
+# Logs
+logs/
+*.log
+npm-debug.log*

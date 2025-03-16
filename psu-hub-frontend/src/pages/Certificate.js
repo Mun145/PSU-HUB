@@ -1,60 +1,43 @@
-// psu-hub-frontend/src/pages/Certificate.js
+// src/pages/Certificate.js
 import React from 'react';
-import { Container, Paper, Typography, Button, Fade } from '@mui/material';
+import { Helmet } from 'react-helmet';
+import { Container, Paper, Typography, Button, Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
-import { toast } from 'react-toastify';
 
 const Certificate = () => {
   const location = useLocation();
-  const { certificate } = location.state || {};
-
-  if (!certificate) {
-    toast.error("No certificate data found.");
-    return (
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h5">Certificate</Typography>
-          <Typography>
-            No certificate data available. Please complete the survey to generate your certificate.
-          </Typography>
-        </Paper>
-      </Container>
-    );
-  }
+  const certificateData = location.state;
 
   return (
-    <Fade in={true} timeout={1000}>
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
+    <>
+      <Helmet>
+        <title>PSU Hub - Certificate</title>
+        <meta name="description" content="View or print your certificate from PSU Hub." />
+      </Helmet>
+      <Container maxWidth="md" sx={{ mt: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Certificate of Participation
-          </Typography>
-          <Typography variant="body1">
-            <strong>Certificate ID:</strong> {certificate.certificateId}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Event ID:</strong> {certificate.eventId}
-          </Typography>
-          <Typography variant="body1">
-            <strong>User ID:</strong> {certificate.userId}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Issued At:</strong> {new Date(certificate.issuedAt).toLocaleString()}
-          </Typography>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            {certificate.message}
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => window.print()}
-            sx={{ mt: 3 }}
-          >
-            Print Certificate
-          </Button>
+          {certificateData ? (
+            <>
+              <Typography variant="h4" gutterBottom>
+                Certificate of Attendance
+              </Typography>
+              <Typography variant="body1">
+                This certifies that <strong>{certificateData.name}</strong> has attended the event{' '}
+                <strong>{certificateData.eventTitle}</strong> on{' '}
+                <strong>{new Date(certificateData.date).toLocaleDateString()}</strong>.
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <Button variant="contained" color="primary">
+                  Print Certificate
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <Typography>No certificate data available.</Typography>
+          )}
         </Paper>
       </Container>
-    </Fade>
+    </>
   );
 };
 

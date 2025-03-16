@@ -1,25 +1,25 @@
-// psu-hub-frontend/src/components/NotificationPanel.js
+// NotificationPanel.js
 import React from 'react';
-import { useNotifications } from '../contexts/NotificationContext';
-import { Card, CardContent, Typography, IconButton } from '@mui/material';
+import { Box, IconButton, Typography, Paper } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const NotificationPanel = () => {
   const { notifications, removeNotification } = useNotifications();
 
   return (
-    <div style={{ position: 'fixed', top: '70px', right: '20px', zIndex: 1000 }}>
-      {notifications.map((n) => (
-        <Card key={n.id} sx={{ mb: 1 }}>
-          <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2">{n.message}</Typography>
-            <IconButton size="small" onClick={() => removeNotification(n.id)}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </CardContent>
-        </Card>
+    <Box sx={{ position: 'fixed', top: 70, right: 20, zIndex: 9999 }}>
+      {notifications.map((notif) => (
+        <Paper key={notif.id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ flexGrow: 1 }}>
+            {notif.message}
+          </Typography>
+          <IconButton size="small" onClick={() => removeNotification(notif.id)}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Paper>
       ))}
-    </div>
+    </Box>
   );
 };
 

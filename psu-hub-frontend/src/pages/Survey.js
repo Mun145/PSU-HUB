@@ -1,60 +1,56 @@
-// psu-hub-frontend/src/pages/Survey.js
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom';
+// src/pages/Survey.js
+import React from 'react';
+import { Helmet } from 'react-helmet';
+import { Container, Paper, Typography, Button} from '@mui/material';
+import { Formik, Form } from 'formik';
+import * as Yup from 'yup';
 import { toast } from 'react-toastify';
+import api from '../api/axiosInstance';
+import FormikTextField from '../components/FormikTextField';
+import { useSearchParams } from 'react-router-dom';
 
 const Survey = () => {
-  const [responses, setResponses] = useState({});
-  const [message, setMessage] = useState('');
-  const navigate = useNavigate();
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const eventId = queryParams.get('eventId');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:3001/api/surveys/submit', {
-        eventId,
-        responses
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      setMessage(res.data.message);
-      toast.success(res.data.message);
-      // Navigate to the Certificate page and pass certificate data
-      navigate('/certificate', { state: { certificate: res.data.certificate } });
-    } catch (error) {
-      const errMsg = error.response?.data?.message || error.message;
-      setMessage('Error submitting survey: ' + errMsg);
-      toast.error('Error submitting survey: ' + errMsg);
-    }
-  };
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId');
 
   return (
-    <div>
-      <h1>Survey for Event {eventId}</h1>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <label>
-          Rate the event (1-5):{' '}
-          <input
-            type="number"
-            min="1"
-            max="5"
-            onChange={(e) =>
-              setResponses({ ...responses, rating: e.target.value })
-            }
-          />
-        </label>
-        <br />
-        <button type="submit">Submit Survey</button>
-      </form>
-    </div>
+    <>
+      <Helmet>
+        <title>PSU Hub - Survey</title>
+        <meta name="description" content="Submit your survey for an event on PSU Hub." />
+      </Helmet>
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h5" gutterBottom>Survey</Typography>
+          <Formik
+            initialValues={{ rating: '', feedback: '' }}
+            validationSchema={Yup.object({
+              rating: Yup.number().required('Rating is required').min(1, 'Min rating is 1').max(5, 'Max rating is 5'),
+              feedback: Yup.string().required('Feedback is required')
+            })}
+            onSubmit={async (values) => {
+              try {
+                const payload = { ...values, eventId };
+                const { data } = await api.post('/surveys/submit', payload);
+                toast.success(data.message || 'Survey submitted successfully');
+              } catch (error) {
+                toast.error(error.response?.data?.message || 'Error submitting survey');
+              }
+            }}
+          >
+            {({ handleSubmit }) => (
+              <Form onSubmit={handleSubmit} noValidate>
+                <FormikTextField name="rating" label="Rating (1-5)" type="number" />
+                <FormikTextField name="feedback" label="Feedback" multiline rows={4} />
+                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                  Submit Survey
+                </Button>
+              </Form>
+            )}
+          </Formik>
+        </Paper>
+      </Container>
+    </>
   );
 };
 

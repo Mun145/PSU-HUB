@@ -1,21 +1,19 @@
-// psu-hub-frontend/src/theme.js
+// src/theme.js
 import { createTheme } from '@mui/material/styles';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',  // Light-ish blue, similar to PSU’s theme
+export default function getTheme(mode) {
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: mode === 'light' ? '#1976d2' : '#90caf9',
+      },
+      background: {
+        default: mode === 'light' ? '#f5faff' : '#121212',
+      },
     },
-    secondary: {
-      main: '#ffffff',  // White
+    typography: {
+      fontFamily: 'Roboto, sans-serif',
     },
-    background: {
-      default: '#f5faff', // A very light blue/white background
-    },
-  },
-  typography: {
-    fontFamily: 'Roboto, sans-serif',
-  },
-});
-
-export default theme;
+  });
+}

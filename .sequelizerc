@@ -1,0 +1,9 @@
+const path = require('path');
+require('dotenv').config();
+
+module.exports = {
+  'config': path.resolve('psu-hub-backend', 'config', 'config.js'),
+  'models-path': path.resolve('psu-hub-backend', 'models'),
+  'seeders-path': path.resolve('psu-hub-backend', 'seeders'),
+  'migrations-path': path.resolve('psu-hub-backend', 'migrations')
+};

@@ -1,82 +1,32 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-require('dotenv').config();
-
 const router = express.Router();
+const userController = require('../controllers/userController');
+const auth = require('../middleware/auth');
+const { body } = require('express-validator');
+const uploadProfile = require('../services/profileUpload');
 
-// User Registration Route (Public)
-router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
+// Registration with validation
+router.post(
+  '/register',
+  body('name').notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Must be a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  userController.register
+);
 
-    // Check if user exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
+//profile image
+router.put(
+  '/profile-with-image',
+  auth,
+  uploadProfile.single('profileImage'), // field name in the form
+  userController.updateProfileWithImage
+);
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+// Login
+router.post('/login', userController.login);
 
-    // Create user
-    const newUser = await User.create({ name, email, password: hashedPassword, role });
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        createdAt: newUser.createdAt
-      }
-    });
-  } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).json({ message: 'Error registering user', error: error.message });
-  }
-});
-
-// User Login Route (Public)
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Generate JWT Token
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-  } catch (error) {
-    console.error('Error logging in:', error);
-    res.status(500).json({ message: 'Error logging in', error: error.message });
-  }
-});
+// Profile routes (protected with auth middleware)
+router.get('/profile', auth, userController.getProfile);
+router.put('/profile', auth, userController.updateProfile);
 
 module.exports = router;
-
