@@ -1,6 +1,14 @@
-// src/components/Navbar.js
+// src/components/NavBar.js
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, FormControl, Select, MenuItem } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  FormControl,
+  Select,
+  MenuItem
+} from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -16,8 +24,8 @@ const Navbar = () => {
 
   return (
     <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+      <Toolbar sx={{ gap: 2 }}>
+        <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
           PSU Hub
         </Typography>
         <Button color="inherit" component={Link} to="/">
@@ -25,10 +33,6 @@ const Navbar = () => {
         </Button>
         {user ? (
           <>
-            <Button color="inherit" onClick={handleLogout}>
-              Logout
-            </Button>
-            {/* Additional links based on role */}
             {userRole === 'admin' && (
               <>
                 <Button color="inherit" component={Link} to="/create-event">
@@ -41,7 +45,7 @@ const Navbar = () => {
             )}
             {userRole === 'psu_admin' && (
               <Button color="inherit" component={Link} to="/pending-events">
-                Pending Events
+                Pending
               </Button>
             )}
             <Button color="inherit" component={Link} to="/dashboard">
@@ -49,6 +53,9 @@ const Navbar = () => {
             </Button>
             <Button color="inherit" component={Link} to="/profile">
               Profile
+            </Button>
+            <Button color="inherit" onClick={handleLogout}>
+              Logout
             </Button>
           </>
         ) : (
@@ -61,7 +68,6 @@ const Navbar = () => {
             </Button>
           </>
         )}
-        {/* Example language selection placeholder */}
         <FormControl variant="standard" sx={{ ml: 2, color: 'white' }}>
           <Select
             value="en"

@@ -16,10 +16,6 @@ const Event = sequelize.define('Event', {
     type: DataTypes.TEXT,
     allowNull: false
   },
-  date: {
-    type: DataTypes.DATE,
-    allowNull: false
-  },
   location: {
     type: DataTypes.STRING,
     allowNull: false
@@ -31,9 +27,30 @@ const Event = sequelize.define('Event', {
     type: DataTypes.ENUM('pending', 'approved', 'rejected', 'published', 'draft'),
     defaultValue: 'pending'
   },
-  // NEW: Add an imageUrl field (optional)
   imageUrl: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  // New fields
+  academicYear: {
+    type: DataTypes.STRING(10),
+    allowNull: true
+  },
+  participationCategory: {
+    type: DataTypes.ENUM('P', 'PAE'),
+    allowNull: true
+  },
+  startDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  endDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  totalHours: {
+    type: DataTypes.INTEGER,
     allowNull: true
   }
 }, {

@@ -1,7 +1,16 @@
 // src/pages/Register.js
 import React from 'react';
 import { Helmet } from 'react-helmet';
-import { Container, Paper, Typography, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import {
+  Container,
+  Paper,
+  Typography,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
+} from '@mui/material';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import axiosInstance from '../api/axiosInstance';
@@ -13,18 +22,19 @@ const Register = () => {
     <>
       <Helmet>
         <title>PSU Hub - Register</title>
-        <meta name="description" content="Register for PSU Hub." />
       </Helmet>
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Container maxWidth="sm" sx={{ mt: 6, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h5" gutterBottom>Register</Typography>
+          <Typography variant="h5" gutterBottom>
+            Create an Account
+          </Typography>
           <Formik
             initialValues={{ name: '', email: '', password: '', role: 'faculty' }}
             validationSchema={Yup.object({
               name: Yup.string().required('Name is required'),
-              email: Yup.string().email('Invalid email address').required('Email is required'),
-              password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-              role: Yup.string().oneOf(['faculty', 'admin', 'psu_admin']).required('Role is required')
+              email: Yup.string().email('Invalid email').required('Email is required'),
+              password: Yup.string().min(6).required('Password is required'),
+              role: Yup.string().oneOf(['faculty', 'admin', 'psu_admin']).required('Role required')
             })}
             onSubmit={async (values) => {
               try {
@@ -36,11 +46,15 @@ const Register = () => {
             }}
           >
             {({ values, handleChange, handleSubmit }) => (
-              <Form onSubmit={handleSubmit} noValidate>
+              <Form
+                onSubmit={handleSubmit}
+                noValidate
+                style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+              >
                 <FormikTextField name="name" label="Name" />
                 <FormikTextField name="email" label="Email" />
                 <FormikTextField name="password" label="Password" type="password" />
-                <FormControl fullWidth margin="normal">
+                <FormControl>
                   <InputLabel id="role-label">Role</InputLabel>
                   <Select
                     labelId="role-label"
@@ -52,10 +66,10 @@ const Register = () => {
                   >
                     <MenuItem value="faculty">Faculty</MenuItem>
                     <MenuItem value="admin">Admin</MenuItem>
-                    <MenuItem value="psu_admin">PSU Admin (Board Member)</MenuItem>
+                    <MenuItem value="psu_admin">PSU Admin</MenuItem>
                   </Select>
                 </FormControl>
-                <Button color="primary" variant="contained" fullWidth type="submit" sx={{ mt: 2 }}>
+                <Button variant="contained" fullWidth type="submit">
                   Register
                 </Button>
               </Form>

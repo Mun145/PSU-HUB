@@ -1,5 +1,5 @@
 // psu-hub-backend/controllers/eventController.js
-const { Event, Registration } = require('../models'); // Ensure Registration model exists
+const { Event, Registration } = require('../models');
 const QRCode = require('qrcode');
 const logger = require('../services/logger');
 const AppError = require('../utils/AppError');
@@ -7,13 +7,38 @@ const { sendSuccess } = require('../utils/responseHelper');
 
 exports.createEvent = async (req, res, next) => {
   try {
-    const { title, description, date, location } = req.body;
-    const newEvent = await Event.create({ title, description, date, location });
+    // Updated to gather all the new fields from req.body
+    const {
+      title,
+      description,
+      location,
+      academicYear,
+      participationCategory,
+      startDate,
+      endDate,
+      totalHours
+    } = req.body;
+
+    // Create the event with new fields
+    const newEvent = await Event.create({
+      title,
+      description,
+      location,
+      academicYear,
+      participationCategory, 
+      startDate,
+      endDate,
+      totalHours
+    });
+
+    // Generate a QR code 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const qrData = `${baseUrl}/api/attendance/scan?eventId=${newEvent.id}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrData);
+
     newEvent.qr_code = qrCodeDataUrl;
     await newEvent.save();
+
     logger.info('Event created', { eventId: newEvent.id, user: req.user.id });
     return sendSuccess(res, newEvent, 'Event created successfully');
   } catch (error) {
@@ -23,23 +48,36 @@ exports.createEvent = async (req, res, next) => {
 
 exports.createEventWithImage = async (req, res, next) => {
   try {
-    const { title, description, date, location } = req.body;
+    // Now also gather new fields
+    const {
+      title,
+      description,
+      location,
+      academicYear,
+      participationCategory,
+      startDate,
+      endDate,
+      totalHours
+    } = req.body;
 
-    // If Multer uploaded a file, it's available in req.file
     let imagePath = null;
     if (req.file) {
       imagePath = `/uploads/${req.file.filename}`;
     }
 
-    // Create the event in the DB
     const newEvent = await Event.create({
       title,
       description,
-      date,
       location,
+      academicYear,
+      participationCategory,
+      startDate,
+      endDate,
+      totalHours,
       imageUrl: imagePath
     });
 
+    // QR code
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const qrData = `${baseUrl}/api/attendance/scan?eventId=${newEvent.id}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrData);
@@ -111,15 +149,33 @@ exports.publishEvent = async (req, res, next) => {
 exports.updateEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, date, location } = req.body;
+
+    // Add new fields here as well
+    const {
+      title,
+      description,
+      location,
+      academicYear,
+      participationCategory,
+      startDate,
+      endDate,
+      totalHours
+    } = req.body;
+
     const event = await Event.findByPk(id);
     if (!event) {
       throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
     }
+
     event.title = title || event.title;
     event.description = description || event.description;
-    event.date = date || event.date;
     event.location = location || event.location;
+    event.academicYear = academicYear || event.academicYear;
+    event.participationCategory = participationCategory || event.participationCategory;
+    event.startDate = startDate || event.startDate;
+    event.endDate = endDate || event.endDate;
+    event.totalHours = totalHours || event.totalHours;
+
     await event.save();
     return sendSuccess(res, event, 'Event updated successfully');
   } catch (error) {
@@ -158,7 +214,6 @@ exports.registerForEvent = async (req, res, next) => {
   try {
     const eventId = req.params.id;
     const userId = req.user.id;
-    // Create a new registration record (ensure Registration model exists)
     const registration = await Registration.create({ eventId, userId });
     return sendSuccess(res, registration, 'Registered successfully');
   } catch (error) {

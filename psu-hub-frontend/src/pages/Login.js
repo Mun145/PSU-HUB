@@ -1,7 +1,7 @@
 // src/pages/Login.js
 import React, { useContext } from 'react';
 import { Helmet } from 'react-helmet';
-import { Container, Paper, Typography, Button} from '@mui/material';
+import { Container, Paper, Typography, Button } from '@mui/material';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
@@ -17,18 +17,17 @@ const Login = () => {
     <>
       <Helmet>
         <title>PSU Hub - Login</title>
-        <meta name="description" content="Login to PSU Hub." />
       </Helmet>
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Container maxWidth="sm" sx={{ mt: 6, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Login
+            Sign In
           </Typography>
           <Formik
             initialValues={{ email: '', password: '' }}
             validationSchema={Yup.object({
-              email: Yup.string().email('Invalid email address').required('Email is required'),
-              password: Yup.string().required('Password is required')
+              email: Yup.string().email('Invalid email').required('Required'),
+              password: Yup.string().required('Required')
             })}
             onSubmit={async (values) => {
               const success = await login(values.email, values.password);
@@ -40,11 +39,15 @@ const Login = () => {
             }}
           >
             {({ handleSubmit }) => (
-              <Form onSubmit={handleSubmit} noValidate>
+              <Form
+                onSubmit={handleSubmit}
+                noValidate
+                style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+              >
                 <FormikTextField name="email" label="Email" />
                 <FormikTextField name="password" label="Password" type="password" />
-                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
-                  Login
+                <Button type="submit" variant="contained" fullWidth>
+                  Log In
                 </Button>
               </Form>
             )}

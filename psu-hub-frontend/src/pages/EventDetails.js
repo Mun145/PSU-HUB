@@ -1,9 +1,19 @@
 // src/pages/EventDetails.js
 import React, { useEffect, useState } from 'react';
-import { Container, Paper, Typography, Button, Box, CircularProgress } from '@mui/material';
+import {
+  Container,
+  Paper,
+  Typography,
+  Box,
+  CircularProgress,
+  Chip,
+  Button
+} from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { toast } from 'react-toastify';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 function EventDetails() {
   const { id } = useParams();
@@ -15,7 +25,7 @@ function EventDetails() {
     setLoading(true);
     api.get(`/events/${id}`)
       .then((res) => {
-        // If using sendSuccess, data might be in res.data.data. If not, adjust accordingly.
+        // If using sendSuccess, data might be in res.data.data:
         const fetched = res.data.data || res.data;
         setEvent(fetched);
       })
@@ -41,39 +51,96 @@ function EventDetails() {
     );
   }
 
-  return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>{event.title}</Typography>
-        <Typography variant="body1" sx={{ mb: 2 }}>{event.description}</Typography>
-        <Typography variant="body2">
-          Date: {new Date(event.date).toLocaleDateString()}
-        </Typography>
-        <Typography variant="body2">Location: {event.location}</Typography>
-        <Typography variant="body2">Status: {event.status}</Typography>
+  // Format dates if they exist
+  const startDateStr = event.startDate
+    ? new Date(event.startDate).toLocaleDateString()
+    : null;
+  const endDateStr = event.endDate
+    ? new Date(event.endDate).toLocaleDateString()
+    : null;
 
-        <Box sx={{ mt: 3 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ mr: 2 }}
-            onClick={() => navigate(`/scan-attendance?eventId=${event.id}`)}
-          >
-            Mark Attendance
-          </Button>
+  return (
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+      {/* Optional Hero Image */}
+      {event.imageUrl && (
+        <Box
+          sx={{
+            width: '100%',
+            height: 300,
+            background: `url(${event.imageUrl}) center/cover no-repeat`,
+            borderRadius: 2,
+            mb: 2
+          }}
+        />
+      )}
+
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          {event.title}
+        </Typography>
+        
+        {/* Basic Info Row (Date, location, academic year) */}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          {startDateStr && endDateStr && (
+            <Chip
+              icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
+              label={`${startDateStr} - ${endDateStr}`}
+              variant="outlined"
+            />
+          )}
+          {/* If there's only a startDate (no endDate) */}
+          {!endDateStr && startDateStr && (
+            <Chip
+              icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
+              label={startDateStr}
+              variant="outlined"
+            />
+          )}
+          {event.location && (
+            <Chip
+              icon={<LocationOnIcon sx={{ fontSize: 18 }} />}
+              label={event.location}
+              variant="outlined"
+            />
+          )}
+          {event.academicYear && (
+            <Chip label={`AY ${event.academicYear}`} variant="outlined" />
+          )}
+        </Box>
+
+        {/* Description */}
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          {event.description}
+        </Typography>
+
+        {/* Additional fields example: totalHours */}
+        {event.totalHours && (
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Total Hours: {event.totalHours}
+          </Typography>
+        )}
+
+        {/* Status */}
+        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 2 }}>
+          Status: {event.status || 'N/A'}
+        </Typography>
+
+        {/* 
+          Removed Mark Attendance
+          If you had a "Survey" or "Register" button, you could place it below.
+          Here we just show a "Back to Dashboard" for convenience.
+        */}
+        <Box sx={{ mt: 2 }}>
           <Button
             variant="outlined"
-            color="primary"
-            onClick={() => navigate(`/survey?eventId=${event.id}`)}
+            onClick={() => navigate('/dashboard')}
           >
-            Take Survey
+            Back to Dashboard
           </Button>
         </Box>
       </Paper>
     </Container>
   );
 }
-
-
 
 export default EventDetails;

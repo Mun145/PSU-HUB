@@ -1,12 +1,12 @@
 // src/pages/EditEvent.js
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Container, Paper, Typography, Button, TextField } from '@mui/material';
+import { Container, Paper, Typography, Button, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { toast } from 'react-toastify';
 import api from '../api/axiosInstance';
@@ -21,8 +21,9 @@ const EditEvent = () => {
   useEffect(() => {
     api.get(`/events/${id}`)
       .then((res) => {
-        const event = res.data;
-        event.date = event.date ? new Date(event.date) : null;
+        const event = res.data.data;
+        if (event.startDate) event.startDate = new Date(event.startDate);
+        if (event.endDate) event.endDate = new Date(event.endDate);
         setInitialData(event);
         setLoading(false);
       })
@@ -52,28 +53,30 @@ const EditEvent = () => {
             <Typography variant="h5" gutterBottom>Edit Event</Typography>
             <Formik
               enableReinitialize
-              initialValues={
-                initialData || {
-                  title: '',
-                  description: '',
-                  date: null,
-                  location: ''
-                }
-              }
+              initialValues={{
+                title: initialData?.title || '',
+                description: initialData?.description || '',
+                location: initialData?.location || '',
+                academicYear: initialData?.academicYear || '',
+                participationCategory: initialData?.participationCategory || 'P',
+                startDate: initialData?.startDate || null,
+                endDate: initialData?.endDate || null,
+                totalHours: initialData?.totalHours || ''
+              }}
               validationSchema={Yup.object({
                 title: Yup.string().required('Title is required'),
                 description: Yup.string().required('Description is required'),
-                date: Yup.date().nullable().required('Date is required'),
                 location: Yup.string().required('Location is required')
               })}
               onSubmit={async (values) => {
                 try {
                   const payload = {
                     ...values,
-                    date: values.date ? values.date.toISOString() : null
+                    startDate: values.startDate ? values.startDate.toISOString() : null,
+                    endDate: values.endDate ? values.endDate.toISOString() : null
                   };
-                  const { data } = await api.put(`/events/${id}`, payload);
-                  toast.success(data.message || 'Event updated successfully');
+                  const res = await api.put(`/events/${id}`, payload);
+                  toast.success(res.data.message || 'Event updated successfully');
                   navigate('/dashboard');
                 } catch (error) {
                   toast.error(error.response?.data?.message || 'Error updating event');
@@ -81,24 +84,52 @@ const EditEvent = () => {
               }}
             >
               {({ handleSubmit, values, setFieldValue, errors, touched }) => (
-                <Form onSubmit={handleSubmit} noValidate>
+                <Form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <FormikTextField name="title" label="Title" />
                   <FormikTextField name="description" label="Description" multiline rows={4} />
-                  <DatePicker
-                    label="Event Date"
-                    value={values.date}
-                    onChange={(newValue) => setFieldValue('date', newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        margin="normal"
-                        error={touched.date && Boolean(errors.date)}
-                        helperText={touched.date && errors.date}
-                      />
-                    )}
-                  />
                   <FormikTextField name="location" label="Location" />
+                  <TextField
+                    label="Academic Year"
+                    fullWidth
+                    margin="normal"
+                    name="academicYear"
+                    value={values.academicYear}
+                    onChange={(e) => setFieldValue('academicYear', e.target.value)}
+                  />
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel id="participationCategory-label">Participation Category</InputLabel>
+                    <Select
+                      labelId="participationCategory-label"
+                      name="participationCategory"
+                      value={values.participationCategory}
+                      label="Participation Category"
+                      onChange={(e) => setFieldValue('participationCategory', e.target.value)}
+                    >
+                      <MenuItem value="P">Participation Only (P)</MenuItem>
+                      <MenuItem value="PAE">Planned & Actively Engaged (PAE)</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <DatePicker
+                    label="Start Date"
+                    value={values.startDate}
+                    onChange={(newValue) => setFieldValue('startDate', newValue)}
+                    renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                  />
+                  <DatePicker
+                    label="End Date"
+                    value={values.endDate}
+                    onChange={(newValue) => setFieldValue('endDate', newValue)}
+                    renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                  />
+                  <TextField
+                    label="Total Hours"
+                    type="number"
+                    fullWidth
+                    margin="normal"
+                    name="totalHours"
+                    value={values.totalHours}
+                    onChange={(e) => setFieldValue('totalHours', e.target.value)}
+                  />
                   <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
                     Update Event
                   </Button>
