@@ -18,8 +18,6 @@ import {
   Switch,
   useTheme
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import PersonIcon from '@mui/icons-material/Person';
 import { AuthContext } from './contexts/AuthContext';
 import { useThemeContext } from './contexts/ThemeContext';
 import navItems from './config/navItems';
@@ -51,7 +49,7 @@ function App() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const theme = useTheme(); // gives us access to the MUI theme
+  const theme = useTheme();
   const userRole = user ? user.role : null;
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
@@ -60,7 +58,7 @@ function App() {
     navigate('/login');
   };
 
-  // Build the nav items for the drawer, skipping "Profile" so we show an avatar
+  // Build the nav items for the drawer
   const renderNavItems = () => {
     return navItems
       .filter((item) => {
@@ -92,15 +90,14 @@ function App() {
       });
   };
 
-  // The Drawer content
   const drawer = (
     <Box
       sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        // Using theme for brand or background
-        backgroundColor: theme.palette.mode === 'light' ? '#fafafa' : '#1e1e1e'
+        backgroundColor:
+          theme.palette.mode === 'light' ? '#fafafa' : '#1e1e1e'
       }}
     >
       <Toolbar sx={{ bgcolor: theme.palette.primary.main, color: '#fff' }}>
@@ -113,10 +110,7 @@ function App() {
         <List>{renderNavItems()}</List>
       </Box>
       <Divider />
-      {/* You could add a small footer or version info here */}
-      <Box sx={{ p: 1, textAlign: 'center', fontSize: 12 }}>
-        v1.0.0
-      </Box>
+      <Box sx={{ p: 1, textAlign: 'center', fontSize: 12 }}>v1.0.0</Box>
     </Box>
   );
 
@@ -133,13 +127,15 @@ function App() {
         }}
       >
         <Toolbar>
+          {/* Replace the MenuIcon with a text-based icon */}
           <IconButton
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
-            <MenuIcon />
+            {/* Simple burger menu text/emoji instead of MenuIcon */}
+            <span style={{ fontSize: '1.25rem' }}>☰</span>
           </IconButton>
 
           <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
@@ -171,7 +167,8 @@ function App() {
                   }}
                 />
               ) : (
-                <PersonIcon />
+                // Replacing PersonIcon with an emoji or text
+                <span style={{ fontSize: '1.25rem' }}>👤</span>
               )}
             </IconButton>
           )}
@@ -229,33 +226,68 @@ function App() {
         <Toolbar />
         <Suspense fallback={<div>Loading...</div>}>
           <Routes>
-            <Route path="/" element={userRole ? <Home /> : <Navigate to="/login" replace />} />
+            <Route
+              path="/"
+              element={userRole ? <Home /> : <Navigate to="/login" replace />}
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/notifications" element={<ProtectedRoute element={<NotificationsPage />} />} />
-            <Route path="/my-attendance" element={<ProtectedRoute element={<MyAttendance />} />} />
-            <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+            <Route
+              path="/notifications"
+              element={<ProtectedRoute element={<NotificationsPage />} />}
+            />
+            <Route
+              path="/my-attendance"
+              element={<ProtectedRoute element={<MyAttendance />} />}
+            />
+            <Route
+              path="/profile"
+              element={<ProtectedRoute element={<Profile />} />}
+            />
             <Route
               path="/dashboard"
-              element={<ProtectedRoute element={<Dashboard />} roles={['faculty', 'admin', 'psu_admin']} />}
+              element={
+                <ProtectedRoute
+                  element={<Dashboard />}
+                  roles={['faculty', 'admin', 'psu_admin']}
+                />
+              }
             />
             <Route
               path="/create-event"
-              element={<ProtectedRoute element={<CreateEvent />} roles={['admin']} />}
+              element={
+                <ProtectedRoute element={<CreateEvent />} roles={['admin']} />
+              }
             />
             <Route
               path="/analytics"
-              element={<ProtectedRoute element={<Analytics />} roles={['admin']} />}
+              element={
+                <ProtectedRoute element={<Analytics />} roles={['admin']} />
+              }
             />
             <Route
               path="/pending-events"
-              element={<ProtectedRoute element={<PendingEvents />} roles={['psu_admin']} />}
+              element={
+                <ProtectedRoute element={<PendingEvents />} roles={['psu_admin']} />
+              }
             />
-            <Route path="/scan-attendance" element={<ProtectedRoute element={<ScanAttendance />} />} />
+            <Route
+              path="/scan-attendance"
+              element={<ProtectedRoute element={<ScanAttendance />} />}
+            />
             <Route path="/survey" element={<ProtectedRoute element={<Survey />} />} />
-            <Route path="/certificate" element={<ProtectedRoute element={<Certificate />} />} />
-            <Route path="/edit-event/:id" element={<ProtectedRoute element={<EditEvent />} />} />
-            <Route path="/event/:id" element={<ProtectedRoute element={<EventDetails />} />} />
+            <Route
+              path="/certificate"
+              element={<ProtectedRoute element={<Certificate />} />}
+            />
+            <Route
+              path="/edit-event/:id"
+              element={<ProtectedRoute element={<EditEvent />} />}
+            />
+            <Route
+              path="/event/:id"
+              element={<ProtectedRoute element={<EventDetails />} />}
+            />
             <Route path="/not-authorized" element={<NotAuthorized />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

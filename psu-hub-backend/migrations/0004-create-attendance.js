@@ -2,24 +2,14 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Registrations', {
+    await queryInterface.createTable('Attendances', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
       },
-      eventId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'Events',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
-      },
-      userId: {
+      user_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -29,20 +19,34 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      createdAt: {
+      event_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Events',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      scan_time: {
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW'),
         allowNull: false
       },
-      updatedAt: {
+      createdAt: {
+        allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.fn('NOW'),
-        allowNull: false
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Registrations');
+    await queryInterface.dropTable('Attendances');
   }
 };

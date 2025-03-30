@@ -17,10 +17,6 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false
       },
-      date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
       location: {
         type: Sequelize.STRING,
         allowNull: false
@@ -29,12 +25,33 @@ module.exports = {
         type: Sequelize.TEXT
       },
       status: {
-        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'published'),
+        // final set includes 'draft'
+        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'published', 'draft'),
         defaultValue: 'pending',
         allowNull: false
       },
-      imageUrl: {         // NEW: Field for event image URL
+      imageUrl: {
         type: Sequelize.STRING,
+        allowNull: true
+      },
+      academicYear: {
+        type: Sequelize.STRING(10),
+        allowNull: true
+      },
+      participationCategory: {
+        type: Sequelize.ENUM('P', 'PAE'),
+        allowNull: true
+      },
+      startDate: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      endDate: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      totalHours: {
+        type: Sequelize.INTEGER,
         allowNull: true
       },
       createdAt: {
@@ -51,7 +68,10 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Events_status";');
+    // drop the table
     await queryInterface.dropTable('Events');
+    // Also drop the ENUMS if you want to be thorough, but note MySQL doesn't store them as separate types.
+    // e.g.: await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Events_status";');
+    //       await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Events_participationCategory";');
   }
 };

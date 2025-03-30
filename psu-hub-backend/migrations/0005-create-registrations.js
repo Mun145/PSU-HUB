@@ -2,24 +2,32 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Attendances', {
+    await queryInterface.createTable('Registrations', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
       },
-      user_id: {
+      userId: {
         type: Sequelize.INTEGER,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
-      event_id: {
+      eventId: {
         type: Sequelize.INTEGER,
-        allowNull: false
-      },
-      scan_time: {
-        type: Sequelize.DATE,
-        allowNull: false
+        allowNull: false,
+        references: {
+          model: 'Events',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
       createdAt: {
         allowNull: false,
@@ -35,6 +43,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Attendances');
+    await queryInterface.dropTable('Registrations');
   }
 };

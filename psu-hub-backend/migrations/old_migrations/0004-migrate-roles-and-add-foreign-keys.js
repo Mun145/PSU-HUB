@@ -1,3 +1,4 @@
+//psu-hub-backend/migrations/0004-migrate-roles-and-add-foreign-keys.js
 'use strict';
 
 module.exports = {

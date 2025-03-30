@@ -1,4 +1,3 @@
-// src/pages/PendingEventsPage.js
 import React, { useEffect, useState, useContext } from 'react';
 import {
   Container,
@@ -16,7 +15,6 @@ import {
   DialogActions,
   Box,
   Pagination,
-  Paper,
   styled,
   Typography as MuiTypography
 } from '@mui/material';
@@ -247,7 +245,7 @@ const PendingEventsPage = () => {
                 Status: {selectedEvent.status}
               </StatusLabel>
               <Typography variant="body2" sx={{ mt: 2 }}>
-                Description: {selectedEvent.description}
+                {selectedEvent.description}
               </Typography>
             </>
           ) : (

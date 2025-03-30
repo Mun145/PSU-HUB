@@ -21,7 +21,10 @@ import {
   MenuItem,
   Checkbox,
   ListItemText,
-  Fade
+  Fade,
+  Card,
+  CardContent,
+  CardActions // <-- We now use it!
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -45,6 +48,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// Reusable TabPanel component for the detail modal
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return (
@@ -61,6 +65,7 @@ function TabPanel(props) {
 }
 
 export default function Analytics() {
+  // Overview and event analytics data
   const [overview, setOverview] = useState(null);
   const [eventAnalytics, setEventAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,26 +77,31 @@ export default function Analytics() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [sortBy, setSortBy] = useState('date');
 
-  // Modal
+  // Detail modal
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
-  // Advanced
+  // Advanced analytics
   const [advancedData, setAdvancedData] = useState(null);
   const [advStart, setAdvStart] = useState(null);
   const [advEnd, setAdvEnd] = useState(null);
 
   useEffect(() => {
+    // Fetch overview analytics
     api.get('/analytics/overview')
       .then((res) => setOverview(res.data.data))
-      .catch((err) => toast.error(err.response?.data?.message || 'Error fetching overview'));
+      .catch((err) => {
+        toast.error(err.response?.data?.message || 'Error fetching overview');
+      });
 
+    // Fetch event analytics
     api.get('/analytics/events')
       .then((res) => setEventAnalytics(res.data.data))
       .catch((err) => toast.error(err.response?.data?.message || 'Error fetching events'))
       .finally(() => setLoading(false));
 
+    // Initial advanced analytics
     fetchAdvancedAnalytics();
   }, []);
 
@@ -115,13 +125,16 @@ export default function Analytics() {
     );
   }
 
-  // Filter & sort
+  // Filter & sort (front-end only)
   const filteredEvents = eventAnalytics.filter((event) => {
     const q = searchQuery.toLowerCase();
     const matchesSearch = event.title.toLowerCase().includes(q);
+
     const statusOk =
       statusFilter.length === 0 ||
       statusFilter.includes(event.status?.toLowerCase());
+
+    // NOTE: If your actual DB uses startDate/endDate instead of event.date, adapt accordingly.
     const eventDate = event.date ? new Date(event.date) : null;
     const [start, end] = dateRange;
     const matchesDate =
@@ -145,7 +158,7 @@ export default function Analytics() {
     return 0;
   });
 
-  // CSV & Excel Export
+  // CSV & Excel Export Helpers
   const exportToCSV = (data, filename) => {
     const csv = Papa.unparse(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -179,6 +192,7 @@ export default function Analytics() {
     }
   };
 
+  // Open detail modal
   const handleOpenDetails = (eventItem) => {
     api.get(`/analytics/events/${eventItem.id}`)
       .then((res) => {
@@ -206,7 +220,7 @@ export default function Analytics() {
     }
   };
 
-  // Overview chart data
+  // Bar chart data for overview
   const overviewChartData = {
     labels: ['Total Events', 'Approved Events', 'Attendance', 'Users'],
     datasets: [
@@ -227,6 +241,17 @@ export default function Analytics() {
     ]
   };
 
+  // Example action to demonstrate CardActions usage
+  const handleRefreshOverview = () => {
+    // Simple re-fetch of the overview data
+    api.get('/analytics/overview')
+      .then((res) => {
+        setOverview(res.data.data);
+        toast.success('Overview refreshed!');
+      })
+      .catch((err) => toast.error('Error refreshing overview'));
+  };
+
   return (
     <>
       <Helmet>
@@ -235,97 +260,186 @@ export default function Analytics() {
       </Helmet>
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        {/* Page Title */}
         <Typography variant="h4" gutterBottom>
-          Analytics Overview
+          Analytics
         </Typography>
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, gap: 1 }}>
-          <Button variant="outlined" onClick={handleExportOverviewCSV}>
-            Export CSV
-          </Button>
-          <Button variant="outlined" onClick={handleExportOverviewExcel}>
-            Export Excel
-          </Button>
-        </Box>
-
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Overall Statistics
-          </Typography>
-          {overview ? (
-            <Box sx={{ mt: 2, height: 350 }}>
-              <Bar
-                data={overviewChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { position: 'top' },
-                    title: { display: true, text: 'Overall Analytics' }
-                  }
-                }}
-              />
-            </Box>
-          ) : (
-            <Typography>No overview data available.</Typography>
-          )}
-        </Paper>
-
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Advanced Analytics
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Start Date"
-                value={advStart}
-                onChange={(v) => setAdvStart(v)}
-                renderInput={(params) => <TextField {...params} />}
-              />
-              <DatePicker
-                label="End Date"
-                value={advEnd}
-                onChange={(v) => setAdvEnd(v)}
-                renderInput={(params) => <TextField {...params} />}
-              />
-            </LocalizationProvider>
-            <Button variant="contained" onClick={handleAdvancedSearch}>
-              Apply
-            </Button>
-          </Box>
-          {advancedData ? (
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                Top Events (by attendance):
+        {/* ========== TOP ROW: KPI Cards ========== */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+                Total Events
               </Typography>
-              {advancedData.topEvents?.length ? (
-                <ul>
-                  {advancedData.topEvents.map((evt) => (
-                    <li key={evt.id}>
-                      {evt.title} — Attendance: <strong>{evt.attendanceCount}</strong>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <Typography>No top events found.</Typography>
-              )}
-
-              <Typography variant="subtitle1" sx={{ mt: 2 }}>
-                Total Attendance in Range:
+              <Typography variant="h5">
+                {overview?.totalEvents ?? 0}
               </Typography>
-              <Typography>
-                {advancedData.totalRangeAttendance || 0} attendances
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+                Approved Events
               </Typography>
-            </Box>
-          ) : (
-            <Typography>No advanced analytics available.</Typography>
-          )}
-        </Paper>
+              <Typography variant="h5">
+                {overview?.approvedEvents ?? 0}
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+                Total Attendance
+              </Typography>
+              <Typography variant="h5">
+                {overview?.totalAttendance ?? 0}
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+                Total Users
+              </Typography>
+              <Typography variant="h5">
+                {overview?.totalUsers ?? 0}
+              </Typography>
+            </Card>
+          </Grid>
+        </Grid>
 
+        {/* ========== NEXT ROW: Overview Chart + Advanced Analytics ========== */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          {/* OVERVIEW CHART CARD */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <Typography variant="h6">Overview Chart</Typography>
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{ mr: 1 }}
+                      onClick={handleExportOverviewCSV}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={handleExportOverviewExcel}
+                    >
+                      Export Excel
+                    </Button>
+                  </Box>
+                </Box>
+                <Box sx={{ mt: 2, height: 300 }}>
+                  {overview ? (
+                    <Bar
+                      data={overviewChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { position: 'top' },
+                          title: { display: true, text: 'Overall Analytics' }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <Typography sx={{ mt: 2 }}>No overview data available.</Typography>
+                  )}
+                </Box>
+              </CardContent>
+
+              {/* CardActions example */}
+              <CardActions sx={{ p: 2 }}>
+                <Button size="small" onClick={handleRefreshOverview}>
+                  Refresh
+                </Button>
+                {/* You can add more actions here if desired */}
+              </CardActions>
+            </Card>
+          </Grid>
+
+          {/* ADVANCED ANALYTICS CARD */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Advanced Analytics
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      label="Start Date"
+                      value={advStart}
+                      onChange={(v) => setAdvStart(v)}
+                      renderInput={(params) => (
+                        <TextField {...params} sx={{ minWidth: 120 }} />
+                      )}
+                    />
+                    <DatePicker
+                      label="End Date"
+                      value={advEnd}
+                      onChange={(v) => setAdvEnd(v)}
+                      renderInput={(params) => (
+                        <TextField {...params} sx={{ minWidth: 120 }} />
+                      )}
+                    />
+                  </LocalizationProvider>
+                  <Button
+                    variant="contained"
+                    onClick={handleAdvancedSearch}
+                    sx={{ alignSelf: 'flex-end' }}
+                  >
+                    Filter
+                  </Button>
+                </Box>
+                {advancedData ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      Top Events (by attendance):
+                    </Typography>
+                    {advancedData.topEvents?.length ? (
+                      <ul>
+                        {advancedData.topEvents.map((evt) => (
+                          <li key={evt.id}>
+                            <strong>{evt.title}</strong> — {evt.attendanceCount} attendees
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Typography>No top events found.</Typography>
+                    )}
+
+                    <Typography variant="subtitle2" sx={{ mt: 2 }}>
+                      Total Attendance in Range:
+                    </Typography>
+                    <Typography>
+                      {advancedData.totalRangeAttendance || 0} attendances
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography>No advanced analytics available.</Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* ========== FILTER & SORT SECTION ========== */}
         <Paper sx={{ p: 3, mb: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Filter & Sort
+            Filter &amp; Sort Events
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
             <TextField
@@ -334,7 +448,8 @@ export default function Analytics() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <FormControl variant="outlined">
+
+            <FormControl variant="outlined" sx={{ minWidth: 150 }}>
               <InputLabel>Status Filter</InputLabel>
               <Select
                 multiple
@@ -342,7 +457,6 @@ export default function Analytics() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 label="Status Filter"
                 renderValue={(sel) => sel.join(', ')}
-                sx={{ minWidth: 150 }}
               >
                 {['pending', 'published', 'rejected'].map((st) => (
                   <MenuItem key={st} value={st}>
@@ -352,6 +466,7 @@ export default function Analytics() {
                 ))}
               </Select>
             </FormControl>
+
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <DatePicker
@@ -368,7 +483,8 @@ export default function Analytics() {
                 />
               </Box>
             </LocalizationProvider>
-            <FormControl variant="outlined">
+
+            <FormControl variant="outlined" sx={{ minWidth: 120 }}>
               <InputLabel>Sort By</InputLabel>
               <Select
                 value={sortBy}
@@ -379,6 +495,7 @@ export default function Analytics() {
                 <MenuItem value="status">Status</MenuItem>
               </Select>
             </FormControl>
+
             <Button
               variant="outlined"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -388,25 +505,32 @@ export default function Analytics() {
           </Box>
         </Paper>
 
+        {/* ========== EVENT LIST SECTION ========== */}
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6">Event Analytics</Typography>
-          <Box sx={{ mt: 2 }}>
-            <Grid container spacing={3}>
-              {sortedEvents.length ? (
-                sortedEvents.map((evt) => (
-                  <Grid item xs={12} sm={6} md={4} key={evt.id}>
-                    <EventCard event={evt} onView={() => handleOpenDetails(evt)} showStatus />
-                  </Grid>
-                ))
-              ) : (
-                <Typography sx={{ mt: 2 }}>No events match the criteria.</Typography>
-              )}
-            </Grid>
-          </Box>
+          <Typography variant="h6" gutterBottom>
+            Event Analytics
+          </Typography>
+          <Grid container spacing={3}>
+            {sortedEvents.length ? (
+              sortedEvents.map((evt) => (
+                <Grid item xs={12} sm={6} md={4} key={evt.id}>
+                  <EventCard
+                    event={evt}
+                    onCardClick={(theEvt) => handleOpenDetails(theEvt)}
+                    showStatus
+                  />
+                </Grid>
+              ))
+            ) : (
+              <Typography sx={{ mt: 2 }}>
+                No events match the criteria.
+              </Typography>
+            )}
+          </Grid>
         </Paper>
       </Container>
 
-      {/* Details Modal */}
+      {/* ========== DETAILS MODAL ========== */}
       <Dialog
         open={detailsOpen}
         onClose={handleCloseDetails}
@@ -426,7 +550,8 @@ export default function Analytics() {
               <TabPanel value={tabValue} index={0}>
                 <Typography variant="h6">{selectedEvent.title}</Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  Date: {selectedEvent.date
+                  Date:{' '}
+                  {selectedEvent.date
                     ? new Date(selectedEvent.date).toLocaleDateString()
                     : 'N/A'}
                 </Typography>
@@ -457,27 +582,37 @@ export default function Analytics() {
                         </Typography>
                       </Box>
                     ))}
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                      <Button variant="outlined" size="small" onClick={() => {
-                        if (selectedEvent && selectedEvent.Attendances) {
-                          const exportData = selectedEvent.Attendances.map((att) => ({
-                            Name: att.User ? att.User.name : 'Unknown',
-                            Email: att.User ? att.User.email : 'N/A'
-                          }));
-                          exportToCSV(exportData, 'attendees.csv');
-                        }
-                      }}>
+                    <Box
+                      sx={{ mt: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}
+                    >
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          if (selectedEvent && selectedEvent.Attendances) {
+                            const exportData = selectedEvent.Attendances.map((att) => ({
+                              Name: att.User ? att.User.name : 'Unknown',
+                              Email: att.User ? att.User.email : 'N/A'
+                            }));
+                            exportToCSV(exportData, 'attendees.csv');
+                          }
+                        }}
+                      >
                         Export CSV
                       </Button>
-                      <Button variant="outlined" size="small" onClick={() => {
-                        if (selectedEvent && selectedEvent.Attendances) {
-                          const exportData = selectedEvent.Attendances.map((att) => ({
-                            Name: att.User ? att.User.name : 'Unknown',
-                            Email: att.User ? att.User.email : 'N/A'
-                          }));
-                          exportToExcel(exportData, 'attendees.xlsx');
-                        }
-                      }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          if (selectedEvent && selectedEvent.Attendances) {
+                            const exportData = selectedEvent.Attendances.map((att) => ({
+                              Name: att.User ? att.User.name : 'Unknown',
+                              Email: att.User ? att.User.email : 'N/A'
+                            }));
+                            exportToExcel(exportData, 'attendees.xlsx');
+                          }
+                        }}
+                      >
                         Export Excel
                       </Button>
                     </Box>

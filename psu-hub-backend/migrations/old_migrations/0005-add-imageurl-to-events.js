@@ -1,3 +1,4 @@
+//psu-hub-backend/migrations/0005-add-imageurl-to-events.js
 'use strict';
 
 module.exports = {

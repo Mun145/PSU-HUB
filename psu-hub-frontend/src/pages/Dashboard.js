@@ -19,22 +19,29 @@ function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Socket
+  // Socket connection
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_API_URL || 'http://localhost:3001');
+    // Use a separate env variable for Socket.IO
+    const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001', {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
     });
+
     socket.on('newEvent', (data) => {
       console.log('New event added:', data);
       toast.info(`New event added: ${data.title}`);
     });
+
     return () => {
       socket.disconnect();
     };
   }, []);
 
-  // Fetch data
+  // Fetch initial events (for all roles)
   useEffect(() => {
     setLoading(true);
     api.get('/events')
@@ -46,6 +53,7 @@ function Dashboard() {
       })
       .finally(() => setLoading(false));
 
+    // Fetch analytics only if admin
     if (userRole === 'admin') {
       api.get('/analytics/overview')
         .then((res) => {
@@ -57,6 +65,7 @@ function Dashboard() {
     }
   }, [userRole]);
 
+  // Helper to re-fetch events if needed
   const refetchEvents = () => {
     setLoading(true);
     api.get('/events')
@@ -105,6 +114,7 @@ function Dashboard() {
     return <PSUAdminDashboardView events={events} setEvents={setEvents} />;
   }
 
+  // If none of the known roles
   return (
     <Container sx={{ mt: 4 }}>
       <Typography>Unknown role: {userRole}</Typography>

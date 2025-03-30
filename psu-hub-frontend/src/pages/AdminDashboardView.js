@@ -1,3 +1,4 @@
+//pages/AdminDashboardView.js
 import React, { useState } from 'react';
 import { Container, Typography, Button, Box, Tabs, Tab, Collapse, Paper } from '@mui/material';
 import { Line } from 'react-chartjs-2';
@@ -45,7 +46,6 @@ export default function AdminDashboardView({ events, refetchEvents, analytics })
     };
   }
 
-  // Unique chart key to force destruction of previous instance
   const chartKey = analytics
     ? `chartKey-${analytics.totalEvents}-${analytics.approvedEvents}-${analytics.totalAttendance}-${analytics.totalUsers}`
     : 'no-analytics';

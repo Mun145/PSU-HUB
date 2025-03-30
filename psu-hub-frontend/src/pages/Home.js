@@ -1,3 +1,4 @@
+//pages/Home.js
 import React, { useContext, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Container, Typography, Grid, Paper } from '@mui/material';
@@ -77,7 +78,7 @@ export default function Home() {
                   <EventCard
                     event={event}
                     // The "View" will go to your single-event page, but we've removed "Mark Attendance".
-                    onView={() => navigate(`/event/${event.id}`)}
+                    onCardClick={() => navigate(`/event/${event.id}`)}
                   />
                 </Grid>
               ))}

@@ -1,39 +1,42 @@
+//migrations/0002-create-event.js
 'use strict';
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Users', {
+    await queryInterface.createTable('Events', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
       },
-      name: {
+      title: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      email: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: false
       },
-      password: {
+      date: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      location: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      role: {
-        type: Sequelize.ENUM('faculty', 'admin', 'psu_admin'),
-        allowNull: false
-      },
-      bio: {
+      qr_code: {
         type: Sequelize.TEXT
       },
-      profilePicture: {
-        type: Sequelize.STRING
+      status: {
+        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'published'),
+        defaultValue: 'pending',
+        allowNull: false
       },
-      contact: {
-        type: Sequelize.STRING
+      imageUrl: {         // NEW: Field for event image URL
+        type: Sequelize.STRING,
+        allowNull: true
       },
       createdAt: {
         allowNull: false,
@@ -49,8 +52,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Drop the ENUM type to avoid conflicts
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Users_role";');
-    await queryInterface.dropTable('Users');
+    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Events_status";');
+    await queryInterface.dropTable('Events');
   }
 };

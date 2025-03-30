@@ -12,8 +12,6 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { toast } from 'react-toastify';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 function EventDetails() {
   const { id } = useParams();
@@ -23,7 +21,8 @@ function EventDetails() {
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/events/${id}`)
+    api
+      .get(`/events/${id}`)
       .then((res) => {
         // If using sendSuccess, data might be in res.data.data:
         const fetched = res.data.data || res.data;
@@ -78,30 +77,18 @@ function EventDetails() {
         <Typography variant="h4" gutterBottom>
           {event.title}
         </Typography>
-        
+
         {/* Basic Info Row (Date, location, academic year) */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
           {startDateStr && endDateStr && (
-            <Chip
-              icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
-              label={`${startDateStr} - ${endDateStr}`}
-              variant="outlined"
-            />
+            <Chip label={`${startDateStr} - ${endDateStr}`} variant="outlined" />
           )}
           {/* If there's only a startDate (no endDate) */}
           {!endDateStr && startDateStr && (
-            <Chip
-              icon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
-              label={startDateStr}
-              variant="outlined"
-            />
+            <Chip label={startDateStr} variant="outlined" />
           )}
           {event.location && (
-            <Chip
-              icon={<LocationOnIcon sx={{ fontSize: 18 }} />}
-              label={event.location}
-              variant="outlined"
-            />
+            <Chip label={event.location} variant="outlined" />
           )}
           {event.academicYear && (
             <Chip label={`AY ${event.academicYear}`} variant="outlined" />
@@ -126,15 +113,11 @@ function EventDetails() {
         </Typography>
 
         {/* 
-          Removed Mark Attendance
           If you had a "Survey" or "Register" button, you could place it below.
           Here we just show a "Back to Dashboard" for convenience.
         */}
         <Box sx={{ mt: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/dashboard')}
-          >
+          <Button variant="outlined" onClick={() => navigate('/dashboard')}>
             Back to Dashboard
           </Button>
         </Box>

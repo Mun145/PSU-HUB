@@ -1,17 +1,16 @@
-// src/pages/FacultyDashboardView.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   Button,
   Grid,
-  Paper
+  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
@@ -20,41 +19,45 @@ import EventCard from '../components/EventCard';
 
 export default function FacultyDashboardView({ events, setEvents }) {
   const navigate = useNavigate();
-  const [filterStatus, setFilterStatus] = useState('published');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
   const [showPast, setShowPast] = useState(false);
 
-  const getFilteredEvents = () => {
-    let filtered = events.filter((event) => {
-      const statusMatch =
-        filterStatus === 'all' ? true : event.status === filterStatus;
-      const query = searchQuery.trim().toLowerCase();
-      const searchMatch =
-        query === '' ||
-        event.title.toLowerCase().includes(query) ||
-        event.description.toLowerCase().includes(query);
-      return statusMatch && searchMatch;
-    });
+  // On mount, fetch published events with registration status
+  useEffect(() => {
+    fetchFacultyEvents();
+    // eslint-disable-next-line
+  }, []);
 
-    if (showPast) {
-      filtered = filtered.filter((e) => {
-        const d = e.startDate || e.date;
-        return new Date(d) < new Date();
-      });
-    } else {
-      filtered = filtered.filter((e) => {
-        const d = e.startDate || e.date;
-        return new Date(d) >= new Date();
-      });
+  const fetchFacultyEvents = async () => {
+    try {
+      const res = await api.get('/events/faculty');
+      // This returns an array of events with an added "isRegistered" field
+      setEvents(res.data.data || []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error fetching faculty events');
     }
+  };
 
+  const getFilteredEvents = () => {
+    let filtered = events.filter((ev) => ev.status === 'published');
+    const query = searchQuery.trim().toLowerCase();
+    filtered = filtered.filter((ev) => {
+      const inTitle = ev.title.toLowerCase().includes(query);
+      const inDesc = ev.description.toLowerCase().includes(query);
+      return query === '' || inTitle || inDesc;
+    });
+    filtered = filtered.filter((ev) => {
+      const d = ev.startDate || ev.date;
+      if (!d) return true;
+      const dateVal = new Date(d);
+      return showPast ? dateVal < new Date() : dateVal >= new Date();
+    });
     filtered.sort((a, b) => {
       const aDate = new Date(a.startDate || a.date);
       const bDate = new Date(b.startDate || b.date);
       return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
     });
-
     return filtered;
   };
 
@@ -64,10 +67,7 @@ export default function FacultyDashboardView({ events, setEvents }) {
     try {
       await api.post(`/events/${event.id}/register`);
       toast.success('Registered successfully');
-      const updated = events.map((ev) =>
-        ev.id === event.id ? { ...ev, isRegistered: true } : ev
-      );
-      setEvents(updated);
+      fetchFacultyEvents(); // re-fetch to update registration status
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error registering');
     }
@@ -77,10 +77,7 @@ export default function FacultyDashboardView({ events, setEvents }) {
     try {
       await api.delete(`/events/${event.id}/unregister`);
       toast.success('Unregistered successfully');
-      const updated = events.map((ev) =>
-        ev.id === event.id ? { ...ev, isRegistered: false } : ev
-      );
-      setEvents(updated);
+      fetchFacultyEvents();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error unregistering');
     }
@@ -94,19 +91,6 @@ export default function FacultyDashboardView({ events, setEvents }) {
 
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={filterStatus}
-              label="Status"
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="published">Published</MenuItem>
-              <MenuItem value="approved">Approved</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-            </Select>
-          </FormControl>
           <TextField
             label="Search events"
             variant="outlined"
@@ -143,10 +127,11 @@ export default function FacultyDashboardView({ events, setEvents }) {
               <Grid item xs={12} sm={6} md={4} key={event.id}>
                 <EventCard
                   event={event}
-                  onView={(evt) => navigate(`/event/${evt.id}`)}
+                  onCardClick={() => navigate(`/event/${event.id}`)}
                   onRegister={handleRegister}
                   onUnregister={handleUnregister}
                   isRegistered={event.isRegistered}
+                  showStatus={false} // Hide status marker for faculty
                 />
               </Grid>
             ))}

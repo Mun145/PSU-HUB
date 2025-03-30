@@ -1,3 +1,4 @@
+//psu-hub-backend/migrations/0008-extend-events.js
 'use strict';
 
 module.exports = {

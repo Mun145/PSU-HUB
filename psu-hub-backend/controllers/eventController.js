@@ -1,13 +1,33 @@
-// psu-hub-backend/controllers/eventController.js
 const { Event, Registration } = require('../models');
 const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 const logger = require('../services/logger');
 const AppError = require('../utils/AppError');
 const { sendSuccess } = require('../utils/responseHelper');
 
+// Helper: Generate and save QR code as PNG file
+const generateAndSaveQRCode = async (req, eventId) => {
+  const qrDirectory = path.join(__dirname, '../uploads/qrcodes');
+  if (!fs.existsSync(qrDirectory)) {
+    fs.mkdirSync(qrDirectory, { recursive: true });
+  }
+  const fileName = `qr_${eventId}_${Date.now()}.png`;
+  const filePath = path.join(qrDirectory, fileName);
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // The QR code points to a dedicated scan page (front-end route)
+  const qrData = `${baseUrl}/scan-attendance?eventId=${eventId}`;
+  await QRCode.toFile(filePath, qrData, {
+    type: 'png',
+    errorCorrectionLevel: 'H',
+    width: 300
+  });
+  return `/uploads/qrcodes/${fileName}`;
+};
+
+// Create event (admin)
 exports.createEvent = async (req, res, next) => {
   try {
-    // Updated to gather all the new fields from req.body
     const {
       title,
       description,
@@ -19,24 +39,19 @@ exports.createEvent = async (req, res, next) => {
       totalHours
     } = req.body;
 
-    // Create the event with new fields
     const newEvent = await Event.create({
       title,
       description,
       location,
       academicYear,
-      participationCategory, 
+      participationCategory,
       startDate,
       endDate,
       totalHours
     });
 
-    // Generate a QR code 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const qrData = `${baseUrl}/api/attendance/scan?eventId=${newEvent.id}`;
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData);
-
-    newEvent.qr_code = qrCodeDataUrl;
+    const qrFilePath = await generateAndSaveQRCode(req, newEvent.id);
+    newEvent.qr_code = qrFilePath;
     await newEvent.save();
 
     logger.info('Event created', { eventId: newEvent.id, user: req.user.id });
@@ -46,9 +61,9 @@ exports.createEvent = async (req, res, next) => {
   }
 };
 
+// Create event with image (admin)
 exports.createEventWithImage = async (req, res, next) => {
   try {
-    // Now also gather new fields
     const {
       title,
       description,
@@ -77,11 +92,8 @@ exports.createEventWithImage = async (req, res, next) => {
       imageUrl: imagePath
     });
 
-    // QR code
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const qrData = `${baseUrl}/api/attendance/scan?eventId=${newEvent.id}`;
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData);
-    newEvent.qr_code = qrCodeDataUrl;
+    const qrFilePath = await generateAndSaveQRCode(req, newEvent.id);
+    newEvent.qr_code = qrFilePath;
     await newEvent.save();
 
     logger.info('Event created with image', { eventId: newEvent.id, user: req.user.id });
@@ -92,6 +104,7 @@ exports.createEventWithImage = async (req, res, next) => {
   }
 };
 
+// Get all events (public)
 exports.getAllEvents = async (req, res, next) => {
   try {
     const events = await Event.findAll();
@@ -101,6 +114,44 @@ exports.getAllEvents = async (req, res, next) => {
   }
 };
 
+// Get event by ID (public)
+exports.getEventById = async (req, res, next) => {
+  try {
+    const event = await Event.findByPk(req.params.id);
+    if (!event) {
+      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    }
+    return sendSuccess(res, event, 'Event fetched successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get all published events for faculty (with registration status)
+exports.getAllEventsForFaculty = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const publishedEvents = await Event.findAll({
+      where: { status: 'published' },
+      include: [{
+        model: Registration,
+        required: false,
+        where: { userId }
+      }]
+    });
+
+    const mapped = publishedEvents.map(ev => {
+      const isRegistered = ev.Registrations && ev.Registrations.length > 0;
+      return { ...ev.get({ plain: true }), isRegistered };
+    });
+
+    return sendSuccess(res, mapped, 'Faculty events fetched');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Approve event (psu_admin)
 exports.approveEvent = async (req, res, next) => {
   try {
     const event = await Event.findByPk(req.params.id);
@@ -115,6 +166,7 @@ exports.approveEvent = async (req, res, next) => {
   }
 };
 
+// Reject event (psu_admin)
 exports.rejectEvent = async (req, res, next) => {
   try {
     const event = await Event.findByPk(req.params.id);
@@ -129,6 +181,7 @@ exports.rejectEvent = async (req, res, next) => {
   }
 };
 
+// Publish event (admin)
 exports.publishEvent = async (req, res, next) => {
   try {
     const event = await Event.findByPk(req.params.id);
@@ -146,11 +199,10 @@ exports.publishEvent = async (req, res, next) => {
   }
 };
 
+// Update event (admin)
 exports.updateEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    // Add new fields here as well
     const {
       title,
       description,
@@ -183,6 +235,7 @@ exports.updateEvent = async (req, res, next) => {
   }
 };
 
+// Delete event (admin)
 exports.deleteEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -197,23 +250,25 @@ exports.deleteEvent = async (req, res, next) => {
   }
 };
 
-exports.getEventById = async (req, res, next) => {
-  try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    return sendSuccess(res, event, 'Event fetched successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Registration endpoints for faculty
+// Faculty Registration: Register for event
 exports.registerForEvent = async (req, res, next) => {
   try {
     const eventId = req.params.id;
     const userId = req.user.id;
+
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    }
+    if (event.status !== 'published') {
+      throw new AppError('You can only register for published events', 400, 'INVALID_EVENT_STATUS');
+    }
+
+    const existingRegistration = await Registration.findOne({ where: { eventId, userId } });
+    if (existingRegistration) {
+      throw new AppError('You have already registered for this event', 400, 'DUPLICATE_REGISTRATION');
+    }
+
     const registration = await Registration.create({ eventId, userId });
     return sendSuccess(res, registration, 'Registered successfully');
   } catch (error) {
@@ -221,6 +276,7 @@ exports.registerForEvent = async (req, res, next) => {
   }
 };
 
+// Faculty Registration: Unregister for event
 exports.unregisterFromEvent = async (req, res, next) => {
   try {
     const eventId = req.params.id;

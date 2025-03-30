@@ -1,3 +1,4 @@
+//pages/PSUAdminDashboardView.js
 import React from 'react';
 import { Container, Typography, Paper, Grid } from '@mui/material';
 import EventCard from '../components/EventCard';
