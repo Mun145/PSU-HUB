@@ -15,6 +15,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import EventCard from './EventCard';
+import fullUrl from '../utils/fullUrl'; 
 
 export default function AdminEventsTab({
   list = [],
@@ -112,7 +113,7 @@ export default function AdminEventsTab({
   const handleDownloadQR = () => {
     if (!previewEvent || !previewEvent.qr_code) return;
     const link = document.createElement('a');
-    link.href = previewEvent.qr_code;
+    link.href     = fullUrl(previewEvent.qr_code);
     // e.g. "MyEvent_qr.png"
     link.download = `${previewEvent.title.replace(/\s+/g, '_')}_qr.png`;
     link.click();
@@ -264,7 +265,7 @@ export default function AdminEventsTab({
             <Box>
               <Box
                 component="img"
-                src={previewEvent.qr_code}
+                src={fullUrl(previewEvent.qr_code)}
                 alt="QR Code"
                 sx={{ width: '250px', mb: 2 }}
               />

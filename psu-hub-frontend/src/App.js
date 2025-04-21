@@ -41,6 +41,10 @@ const EventDetails = React.lazy(() => import('./pages/EventDetails'));
 const MyAttendance = React.lazy(() => import('./pages/MyAttendance'));
 const NotAuthorized = React.lazy(() => import('./pages/NotAuthorized'));
 
+// NEW Lazy Imports for admin pages
+const ManageEventsView = React.lazy(() => import('./pages/ManageEventsView'));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+
 const drawerWidth = 240;
 
 function App() {
@@ -53,6 +57,7 @@ function App() {
   const userRole = user ? user.role : null;
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -96,8 +101,7 @@ function App() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor:
-          theme.palette.mode === 'light' ? '#fafafa' : '#1e1e1e'
+        backgroundColor: theme.palette.mode === 'light' ? '#fafafa' : '#1e1e1e'
       }}
     >
       <Toolbar sx={{ bgcolor: theme.palette.primary.main, color: '#fff' }}>
@@ -127,14 +131,12 @@ function App() {
         }}
       >
         <Toolbar>
-          {/* Replace the MenuIcon with a text-based icon */}
           <IconButton
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
-            {/* Simple burger menu text/emoji instead of MenuIcon */}
             <span style={{ fontSize: '1.25rem' }}>☰</span>
           </IconButton>
 
@@ -149,11 +151,7 @@ function App() {
           />
 
           {user && (
-            <IconButton
-              color="inherit"
-              onClick={() => navigate('/profile')}
-              sx={{ p: 0 }}
-            >
+            <IconButton color="inherit" onClick={() => navigate('/profile')} sx={{ p: 0 }}>
               {user.profilePicture ? (
                 <Box
                   component="img"
@@ -167,7 +165,6 @@ function App() {
                   }}
                 />
               ) : (
-                // Replacing PersonIcon with an emoji or text
                 <span style={{ fontSize: '1.25rem' }}>👤</span>
               )}
             </IconButton>
@@ -176,12 +173,7 @@ function App() {
       </AppBar>
 
       {/* Drawer */}
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="navigation"
-      >
-        {/* Mobile Drawer */}
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} aria-label="navigation">
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -189,24 +181,17 @@ function App() {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth
-            }
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
           }}
         >
           {drawer}
         </Drawer>
 
-        {/* Desktop Drawer */}
         <Drawer
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth
-            }
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
           }}
           open
         >
@@ -217,78 +202,56 @@ function App() {
       {/* Main content area */}
       <Box
         component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` }
-        }}
+        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
       >
         <Toolbar />
         <Suspense fallback={<div>Loading...</div>}>
           <Routes>
+            {/* Home route */}
             <Route
               path="/"
               element={userRole ? <Home /> : <Navigate to="/login" replace />}
             />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route
-              path="/notifications"
-              element={<ProtectedRoute element={<NotificationsPage />} />}
-            />
-            <Route
-              path="/my-attendance"
-              element={<ProtectedRoute element={<MyAttendance />} />}
-            />
-            <Route
-              path="/profile"
-              element={<ProtectedRoute element={<Profile />} />}
-            />
+
+            {/* Common routes */}
+            <Route path="/notifications" element={<ProtectedRoute element={<NotificationsPage />} />} />
+            <Route path="/my-attendance" element={<ProtectedRoute element={<MyAttendance />} />} />
+            <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+
+            {/* Dashboard for faculty and psu_admin */}
             <Route
               path="/dashboard"
-              element={
-                <ProtectedRoute
-                  element={<Dashboard />}
-                  roles={['faculty', 'admin', 'psu_admin']}
-                />
-              }
+              element={<ProtectedRoute element={<Dashboard />} roles={['faculty', 'psu_admin']} />}
+            />
+
+            {/* New Admin routes */}
+            <Route
+              path="/admin-dashboard"
+              element={<ProtectedRoute element={<AdminDashboard />} roles={['admin']} />}
             />
             <Route
-              path="/create-event"
-              element={
-                <ProtectedRoute element={<CreateEvent />} roles={['admin']} />
-              }
+              path="/manage-events"
+              element={<ProtectedRoute element={<ManageEventsView />} roles={['admin']} />}
             />
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute element={<Analytics />} roles={['admin']} />
-              }
-            />
-            <Route
-              path="/pending-events"
-              element={
-                <ProtectedRoute element={<PendingEvents />} roles={['psu_admin']} />
-              }
-            />
-            <Route
-              path="/scan-attendance"
-              element={<ProtectedRoute element={<ScanAttendance />} />}
-            />
+
+            {/* Admin-only create event and analytics */}
+            <Route path="/create-event" element={<ProtectedRoute element={<CreateEvent />} roles={['admin']} />} />
+            <Route path="/analytics" element={<ProtectedRoute element={<Analytics />} roles={['admin']} />} />
+
+            {/* PSU admin only */}
+            <Route path="/pending-events" element={<ProtectedRoute element={<PendingEvents />} roles={['psu_admin']} />} />
+
+            {/* Other common routes */}
+            <Route path="/scan-attendance" element={<ProtectedRoute element={<ScanAttendance />} />} />
             <Route path="/survey" element={<ProtectedRoute element={<Survey />} />} />
-            <Route
-              path="/certificate"
-              element={<ProtectedRoute element={<Certificate />} />}
-            />
-            <Route
-              path="/edit-event/:id"
-              element={<ProtectedRoute element={<EditEvent />} />}
-            />
-            <Route
-              path="/event/:id"
-              element={<ProtectedRoute element={<EventDetails />} />}
-            />
+            <Route path="/certificate" element={<ProtectedRoute element={<Certificate />} />} />
+            <Route path="/edit-event/:id" element={<ProtectedRoute element={<EditEvent />} />} />
+            <Route path="/event/:id" element={<ProtectedRoute element={<EventDetails />} />} />
             <Route path="/not-authorized" element={<NotAuthorized />} />
+
+            {/* Fallback for unknown routes */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

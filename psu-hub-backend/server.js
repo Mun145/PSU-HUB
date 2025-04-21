@@ -7,13 +7,18 @@ const cors = require('cors');
 const logger = require('./services/logger');
 const rateLimiter = require('./middleware/rateLimiter');
 const { sequelize } = require('./models');
+const path = require('path');
+
+// Existing route imports
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const surveyRoutes = require('./routes/surveyRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-const path = require('path');
+
+// NEW admin routes import
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -66,12 +71,18 @@ if (process.env.NODE_ENV !== 'production') {
   sequelize.sync();
 }
 
+// Mount existing routes
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Mount new admin routes under /api/admin
+app.use('/api/admin', adminRoutes);
+
+// Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.post('/api/notify', (req, res) => {

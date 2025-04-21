@@ -1,3 +1,4 @@
+//psu-hub-backend/migrations/0003-create-events.js
 'use strict';
 
 module.exports = {

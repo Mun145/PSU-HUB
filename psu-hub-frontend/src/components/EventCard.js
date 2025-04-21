@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
+import fullUrl from '../utils/fullUrl';
 
 /** Helper to get a short month abbreviation from a Date object */
 function getShortMonth(date) {
@@ -381,7 +382,7 @@ export default function EventCard({
           {event.qr_code ? (
             <Box
               component="img"
-              src={event.qr_code}
+              src={fullUrl(event.qr_code)} 
               alt="QR Code"
               sx={{ width: '100%', maxWidth: 300, mx: 'auto' }}
             />
@@ -395,8 +396,8 @@ export default function EventCard({
               // Download QR Code image
               if (event.qr_code) {
                 const link = document.createElement('a');
-                link.href = event.qr_code;
-                link.download = `${event.title}-QR.png`;
+                link.href     = fullUrl(event.qr_code);
+                link.download = `${event.title.replace(/\s+/g, '_')}_qr.png`;
                 link.click();
               }
             }}

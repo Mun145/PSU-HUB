@@ -1,3 +1,4 @@
+//psu-hub-backend/migrations/0001-create-roles.js
 'use strict';
 
 module.exports = {

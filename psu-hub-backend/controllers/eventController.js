@@ -1,4 +1,6 @@
+// psu-hub-backend/controllers/eventController.js
 const { Event, Registration } = require('../models');
+const ActivityLog = require('../models/ActivityLog');  // Import for logging
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
@@ -160,6 +162,15 @@ exports.approveEvent = async (req, res, next) => {
     }
     event.status = 'approved';
     await event.save();
+
+    // Log the approval action
+    await ActivityLog.create({
+      type: 'activity',
+      message: `Event "${event.title}" was approved and is ready for publishing.`,
+      referenceId: event.id,
+      targetRoles: 'admin'
+    });
+
     return sendSuccess(res, event, 'Event approved');
   } catch (error) {
     next(error);
@@ -193,6 +204,15 @@ exports.publishEvent = async (req, res, next) => {
     }
     event.status = 'published';
     await event.save();
+
+    // Log the publish action
+    await ActivityLog.create({
+      type: 'activity',
+      message: `Event "${event.title}" was published.`,
+      referenceId: event.id,
+      targetRoles: 'admin'
+    });
+
     return sendSuccess(res, event, 'Event published');
   } catch (error) {
     next(error);

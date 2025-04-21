@@ -1,3 +1,4 @@
+//psu-hub-backend/migrations/0004-create-users.js
 'use strict';
 
 module.exports = {

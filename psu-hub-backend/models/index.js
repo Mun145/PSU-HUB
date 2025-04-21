@@ -6,6 +6,7 @@ const Role = require('./Role');
 const Event = require('./Event');
 const Attendance = require('./Attendance');
 const Registration = require('./Registration');
+const ActivityLog = require('./ActivityLog');
 
 // Role associations
 Role.hasMany(User, {
@@ -61,5 +62,6 @@ module.exports = {
   Role,
   Event,
   Attendance,
-  Registration
+  Registration,
+  ActivityLog  
 };
