@@ -11,7 +11,8 @@ import FormikTextField from '../components/FormikTextField';
 
 const Login = () => {
   const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const redirectTo = '/'; 
 
   return (
     <>
@@ -32,7 +33,7 @@ const Login = () => {
             onSubmit={async (values) => {
               const success = await login(values.email, values.password);
               if (success) {
-                navigate('/');
+                navigate(redirectTo, { replace: true });
               } else {
                 toast.error('Login failed');
               }

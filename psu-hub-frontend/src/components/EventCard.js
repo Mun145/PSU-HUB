@@ -52,7 +52,8 @@ export default function EventCard({
   onDelete,
   onQRCode, // NEW prop for QR Code functionality
   isRegistered = false,
-  showStatus = true
+  showStatus = true,
+  extra
 }) {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -372,6 +373,7 @@ export default function EventCard({
               <MenuItem onClick={handleShareFacebook}>Share to Facebook</MenuItem>
             </Menu>
           </Box>
+          {extra && extra}
         </CardActions>
       </Card>
 
@@ -392,19 +394,22 @@ export default function EventCard({
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => {
-              // Download QR Code image
-              if (event.qr_code) {
-                const link = document.createElement('a');
-                link.href     = fullUrl(event.qr_code);
-                link.download = `${event.title.replace(/\s+/g, '_')}_qr.png`;
-                link.click();
-              }
-            }}
+            onClick={async () => {
+                           if (!event.qr_code) return;
+                           const resp = await fetch(fullUrl(event.qr_code), { mode: 'cors' });
+                           const blob = await resp.blob();
+                            const url  = URL.createObjectURL(blob);
+                           const a    = document.createElement('a');
+                            a.href      = url;
+                            a.download  = `${event.title.replace(/\s+/g, '_')}_qr.png`;
+                           a.click();
+                            URL.revokeObjectURL(url);
+                          }}
           >
             Download QR Code
           </Button>
           <Button onClick={handleCloseQrModal}>Close</Button>
+
         </DialogActions>
       </Dialog>
     </>

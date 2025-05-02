@@ -1,3 +1,4 @@
+//src/components/Navbar.js
 import React, { useState } from 'react';
 import { Container, Typography, Button, Box, Tabs, Tab, Collapse, Paper } from '@mui/material';
 import { Line } from 'react-chartjs-2';

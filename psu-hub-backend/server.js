@@ -13,9 +13,10 @@ const path = require('path');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
-const surveyRoutes = require('./routes/surveyRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const surveyRoutes   = require('./routes/surveyRoutes');
+const certificateRoutes = require('./routes/certificateRoutes');
 
 // NEW admin routes import
 const adminRoutes = require('./routes/adminRoutes');
@@ -43,7 +44,9 @@ io.on('connection', (socket) => {
   });
 });
 
-app.use(helmet());
+app.use(
+  helmet({crossOriginResourcePolicy: { policy: 'cross-origin' }})
+);
 app.use(rateLimiter);
 
 const allowedOrigins =
@@ -51,11 +54,11 @@ const allowedOrigins =
     ? ['https://your-production-domain.com']
     : [process.env.DEV_ORIGIN || 'http://localhost:3000'];
 
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-  credentials: true
-}));
+    app.use(cors({
+        origin: true,               
+        credentials: true,
+        methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']
+      }));
 
 app.use(express.json());
 
@@ -75,15 +78,28 @@ if (process.env.NODE_ENV !== 'production') {
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api/surveys', surveyRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/surveys', surveyRoutes);
+app.use('/api/certificates', certificateRoutes);
+
 
 // Mount new admin routes under /api/admin
 app.use('/api/admin', adminRoutes);
 
-// Serve static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files *with* CORS so the frontend (port 3000) can fetch images
+app.use(
+    '/uploads',
+    cors({ origin: allowedOrigins, credentials: true }),
+    express.static(path.join(__dirname, 'uploads'))
+  );
+
+  /* ---- NEW: nicer /certificates path that maps to the same folder ---- */ // << UPDATE
+app.use(
+    '/certificates',
+    cors({ origin: allowedOrigins, credentials: true }),
+    express.static(path.join(__dirname, 'uploads', 'certificates'))
+  );
 
 app.post('/api/notify', (req, res) => {
   const { message } = req.body;

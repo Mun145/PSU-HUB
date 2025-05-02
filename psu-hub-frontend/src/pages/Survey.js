@@ -1,49 +1,82 @@
-// src/pages/Survey.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import {
+  Container, Paper, Typography, Button, CircularProgress
+} from '@mui/material';
 import { Helmet } from 'react-helmet';
-import { Container, Paper, Typography, Button} from '@mui/material';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import FormikTextField from '../components/FormikTextField';
-import { useSearchParams } from 'react-router-dom';
 
-const Survey = () => {
+export default function Survey() {
   const [searchParams] = useSearchParams();
-  const eventId = searchParams.get('eventId');
+  const eventId   = searchParams.get('eventId');
+  const navigate  = useNavigate();
+
+  /* fetch survey shell (to get surveyId) */
+  const [surveyId, setSurveyId]   = useState(null);
+  const [loading , setLoading ]   = useState(true);
+
+  useEffect(() => {
+    api.get(`/surveys/event/${eventId}`)
+       .then(res => setSurveyId(res.data.data.id))
+       .catch(() => toast.error('Survey not found'))
+       .finally(() => setLoading(false));
+  }, [eventId]);
+
+  if (loading) {
+    return (
+      <Container sx={{ mt:4, textAlign:'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+  if (!surveyId) return null;
 
   return (
     <>
       <Helmet>
-        <title>PSU Hub - Survey</title>
-        <meta name="description" content="Submit your survey for an event on PSU Hub." />
+        <title>PSU Hub – Survey</title>
       </Helmet>
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h5" gutterBottom>Survey</Typography>
+
+      <Container maxWidth="sm" sx={{ mt:4 }}>
+        <Paper sx={{ p:4 }}>
+          <Typography variant="h5" gutterBottom>
+            Event Feedback
+          </Typography>
+
           <Formik
             initialValues={{ rating: '', feedback: '' }}
             validationSchema={Yup.object({
-              rating: Yup.number().required('Rating is required').min(1, 'Min rating is 1').max(5, 'Max rating is 5'),
-              feedback: Yup.string().required('Feedback is required')
+              rating  : Yup.number().required().min(1).max(5),
+              feedback: Yup.string().required()
             })}
             onSubmit={async (values) => {
               try {
-                const payload = { ...values, eventId };
-                const { data } = await api.post('/surveys/submit', payload);
-                toast.success(data.message || 'Survey submitted successfully');
-              } catch (error) {
-                toast.error(error.response?.data?.message || 'Error submitting survey');
+                await api.post(
+                  `/surveys/${surveyId}/response`,
+                  { answers: [
+                      { questionId: 'rating',   answer: values.rating },
+                      { questionId: 'feedback', answer: values.feedback }
+                    ]}
+                );
+
+                toast.success('Thank you! Certificate (if applicable) will now be available.');
+                navigate('/my-attendance');         // show the new button
+              } catch (err) {
+                toast.error(err.response?.data?.message || 'Error submitting');
               }
             }}
           >
             {({ handleSubmit }) => (
               <Form onSubmit={handleSubmit} noValidate>
-                <FormikTextField name="rating" label="Rating (1-5)" type="number" />
+                <FormikTextField name="rating"   label="Rating (1-5)" type="number" />
                 <FormikTextField name="feedback" label="Feedback" multiline rows={4} />
-                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
-                  Submit Survey
+
+                <Button type="submit" variant="contained" fullWidth sx={{ mt:2 }}>
+                  Submit
                 </Button>
               </Form>
             )}
@@ -52,6 +85,4 @@ const Survey = () => {
       </Container>
     </>
   );
-};
-
-export default Survey;
+}

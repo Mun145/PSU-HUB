@@ -1,309 +1,252 @@
-// psu-hub-backend/controllers/eventController.js
-const { Event, Registration } = require('../models');
-const ActivityLog = require('../models/ActivityLog');  // Import for logging
-const QRCode = require('qrcode');
-const fs = require('fs');
-const path = require('path');
-const logger = require('../services/logger');
-const AppError = require('../utils/AppError');
+/* controllers/eventController.js */
+
+const {
+  Event,
+  Registration,
+  Attendance,
+  Certificate,
+  User
+} = require('../models');
+
+const ActivityLog  = require('../models/ActivityLog');
+const QRCode       = require('qrcode');
+const fs           = require('fs');
+const path         = require('path');
+const logger       = require('../services/logger');
+const AppError     = require('../utils/AppError');
 const { sendSuccess } = require('../utils/responseHelper');
 
-// Helper: Generate and save QR code as PNG file
+/* helper ────────────────────────────────────────────────────────── */
+const bool = (v) => v === true || v === 'true' || v === 1 || v === '1';
+
+/* generate PNG QR code & return public URL */
 const generateAndSaveQRCode = async (req, eventId) => {
-  const qrDirectory = path.join(__dirname, '../uploads/qrcodes');
-  if (!fs.existsSync(qrDirectory)) {
-    fs.mkdirSync(qrDirectory, { recursive: true });
-  }
-  const fileName = `qr_${eventId}_${Date.now()}.png`;
-  const filePath = path.join(qrDirectory, fileName);
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  // The QR code points to a dedicated scan page (front-end route)
-  const qrData = `${baseUrl}/scan-attendance?eventId=${eventId}`;
-  await QRCode.toFile(filePath, qrData, {
-    type: 'png',
-    errorCorrectionLevel: 'H',
-    width: 300
-  });
-  return `/uploads/qrcodes/${fileName}`;
+  const dir = path.join(__dirname, '../uploads/qrcodes');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const file     = `qr_${eventId}_${Date.now()}.png`;
+  const filePath = path.join(dir, file);
+
+  const front = process.env.FRONTEND_BASE_URL
+            || process.env.DEV_ORIGIN
+            || `${req.protocol}://${req.get('host').replace(':3001', ':3000')}`;
+
+  await QRCode.toFile(
+    filePath,
+    `${front}/attendance-login?eventId=${eventId}`,
+    { type: 'png', errorCorrectionLevel: 'H', width: 300 }
+  );
+
+  return `${req.protocol}://${req.get('host')}/uploads/qrcodes/${file}`;
 };
 
-// Create event (admin)
+/* ─────────────────────────── CREATE ───────────────────────────── */
 exports.createEvent = async (req, res, next) => {
   try {
     const {
-      title,
-      description,
-      location,
-      academicYear,
-      participationCategory,
-      startDate,
-      endDate,
-      totalHours
+      title, description, location,
+      academicYear, participationCategory,
+      startDate, endDate, totalHours,
+      hasCertificate = false
     } = req.body;
 
-    const newEvent = await Event.create({
-      title,
-      description,
-      location,
-      academicYear,
-      participationCategory,
-      startDate,
-      endDate,
-      totalHours
+    const ev = await Event.create({
+      title, description, location,
+      academicYear, participationCategory,
+      startDate, endDate, totalHours,
+      hasCertificate: bool(hasCertificate)
     });
 
-    const qrFilePath = await generateAndSaveQRCode(req, newEvent.id);
-    newEvent.qr_code = qrFilePath;
-    await newEvent.save();
+    ev.qr_code = await generateAndSaveQRCode(req, ev.id);
+    await ev.save();
 
-    logger.info('Event created', { eventId: newEvent.id, user: req.user.id });
-    return sendSuccess(res, newEvent, 'Event created successfully');
-  } catch (error) {
-    next(error);
-  }
+    logger.info('Event created', { eventId: ev.id, user: req.user.id });
+    return sendSuccess(res, ev, 'Event created successfully');
+  } catch (err) { next(err); }
 };
 
-// Create event with image (admin)
 exports.createEventWithImage = async (req, res, next) => {
   try {
     const {
-      title,
-      description,
-      location,
-      academicYear,
-      participationCategory,
-      startDate,
-      endDate,
-      totalHours
+      title, description, location,
+      academicYear, participationCategory,
+      startDate, endDate, totalHours,
+      hasCertificate = false
     } = req.body;
 
-    let imagePath = null;
-    if (req.file) {
-      imagePath = `/uploads/${req.file.filename}`;
-    }
-
-    const newEvent = await Event.create({
-      title,
-      description,
-      location,
-      academicYear,
-      participationCategory,
-      startDate,
-      endDate,
-      totalHours,
-      imageUrl: imagePath
+    const ev = await Event.create({
+      title, description, location,
+      academicYear, participationCategory,
+      startDate, endDate, totalHours,
+      hasCertificate: bool(hasCertificate),
+      imageUrl: req.file ? `/uploads/${req.file.filename}` : null
     });
 
-    const qrFilePath = await generateAndSaveQRCode(req, newEvent.id);
-    newEvent.qr_code = qrFilePath;
-    await newEvent.save();
+    ev.qr_code = await generateAndSaveQRCode(req, ev.id);
+    await ev.save();
 
-    logger.info('Event created with image', { eventId: newEvent.id, user: req.user.id });
-    return sendSuccess(res, newEvent, 'Event created successfully (with image)');
-  } catch (error) {
-    logger.error('Error creating event with image', { error: error.message });
-    next(error);
+    logger.info('Event created with image', { eventId: ev.id, user: req.user.id });
+    return sendSuccess(res, ev, 'Event created successfully (with image)');
+  } catch (err) {
+    logger.error('Error creating event with image', { error: err.message });
+    next(err);
   }
 };
 
-// Get all events (public)
-exports.getAllEvents = async (req, res, next) => {
+/* ─────────────────────────── READ ─────────────────────────────── */
+exports.getAllEvents          = async (_req, res, next) => {
+  try { return sendSuccess(res, await Event.findAll(), 'Events fetched'); }
+  catch (err) { next(err); }
+};
+
+exports.getEventById          = async (req, res, next) => {
   try {
-    const events = await Event.findAll();
-    return sendSuccess(res, events, 'Events fetched successfully');
-  } catch (error) {
-    next(error);
-  }
+    const ev = await Event.findByPk(req.params.id);
+    if (!ev) throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    return sendSuccess(res, ev, 'Event fetched');
+  } catch (err) { next(err); }
 };
 
-// Get event by ID (public)
-exports.getEventById = async (req, res, next) => {
+/* extra endpoint used by Analytics details modal */
+exports.getEventAttendance = async (req, res, next) => {
   try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    return sendSuccess(res, event, 'Event fetched successfully');
-  } catch (error) {
-    next(error);
-  }
+    const eventId = req.params.id;
+
+    const rows = await Attendance.findAll({
+      where   : { event_id: eventId },
+      include : [{ model: User, attributes: ['id','name','email'] }]
+    });
+
+    const certs = await Certificate.findAll({ where: { eventId } });
+    const certMap = new Map(certs.map(c => [`${c.userId}`, c.fileUrl]));
+
+    const withCert = rows.map(r => ({
+      ...r.get({ plain: true }),
+      certificateUrl: certMap.get(String(r.user_id)) || null
+    }));
+
+    return sendSuccess(res, withCert, 'Attendance list');
+  } catch (err) { next(err); }
 };
 
-// Get all published events for faculty (with registration status)
+/* list for faculty with “isRegistered” flag */
 exports.getAllEventsForFaculty = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const publishedEvents = await Event.findAll({
-      where: { status: 'published' },
-      include: [{
-        model: Registration,
-        required: false,
-        where: { userId }
-      }]
+    const published = await Event.findAll({
+      where   : { status: 'published' },
+      include : [{ model: Registration, required: false, where: { userId } }]
     });
 
-    const mapped = publishedEvents.map(ev => {
-      const isRegistered = ev.Registrations && ev.Registrations.length > 0;
-      return { ...ev.get({ plain: true }), isRegistered };
-    });
+    const out = published.map(ev => ({
+      ...ev.get({ plain: true }),
+      isRegistered: !!(ev.Registrations && ev.Registrations.length)
+    }));
 
-    return sendSuccess(res, mapped, 'Faculty events fetched');
-  } catch (error) {
-    next(error);
-  }
+    return sendSuccess(res, out, 'Faculty events fetched');
+  } catch (err) { next(err); }
 };
 
-// Approve event (psu_admin)
-exports.approveEvent = async (req, res, next) => {
-  try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    event.status = 'approved';
-    await event.save();
-
-    // Log the approval action
-    await ActivityLog.create({
-      type: 'activity',
-      message: `Event "${event.title}" was approved and is ready for publishing.`,
-      referenceId: event.id,
-      targetRoles: 'admin'
-    });
-
-    return sendSuccess(res, event, 'Event approved');
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Reject event (psu_admin)
-exports.rejectEvent = async (req, res, next) => {
-  try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    event.status = 'rejected';
-    await event.save();
-    return sendSuccess(res, event, 'Event rejected');
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Publish event (admin)
+/* ─────────────────────── STATUS MUTATIONS ────────────────────── */
+exports.approveEvent = async (req, res, next) => mutateStatus(req, res, next, 'approved', 'approved and is ready for publishing');
+exports.rejectEvent  = async (req, res, next) => mutateStatus(req, res, next, 'rejected',  'was rejected');
 exports.publishEvent = async (req, res, next) => {
   try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    if (event.status !== 'approved') {
+    const ev = await Event.findByPk(req.params.id);
+    if (!ev) throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    if (ev.status !== 'approved')
       throw new AppError('Only approved events can be published', 400, 'INVALID_EVENT_STATUS');
-    }
-    event.status = 'published';
-    await event.save();
 
-    // Log the publish action
-    await ActivityLog.create({
-      type: 'activity',
-      message: `Event "${event.title}" was published.`,
-      referenceId: event.id,
-      targetRoles: 'admin'
-    });
-
-    return sendSuccess(res, event, 'Event published');
-  } catch (error) {
-    next(error);
-  }
+    ev.status = 'published';
+    await ev.save();
+    await logActivity(ev, 'was published.');
+    return sendSuccess(res, ev, 'Event published');
+  } catch (err) { next(err); }
 };
 
-// Update event (admin)
+async function mutateStatus (req, res, next, status, message) {
+  try {
+    const ev = await Event.findByPk(req.params.id);
+    if (!ev) throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    ev.status = status;
+    await ev.save();
+    await logActivity(ev, message);
+    return sendSuccess(res, ev, `Event ${status}`);
+  } catch (err) { next(err); }
+}
+
+function logActivity (event, msg) {
+  return ActivityLog.create({
+    type        : 'activity',
+    message     : `Event “${event.title}” ${msg}`,
+    referenceId : event.id,
+    targetRoles : 'admin'
+  });
+}
+
+/* ─────────────────────────── UPDATE / DEL ─────────────────────── */
 exports.updateEvent = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const ev = await Event.findByPk(req.params.id);
+    if (!ev) throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+
     const {
-      title,
-      description,
-      location,
-      academicYear,
-      participationCategory,
-      startDate,
-      endDate,
-      totalHours
+      title, description, location,
+      academicYear, participationCategory,
+      startDate, endDate, totalHours,
+      hasCertificate
     } = req.body;
 
-    const event = await Event.findByPk(id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
+    Object.assign(ev, {
+      title: title ?? ev.title,
+      description: description ?? ev.description,
+      location: location ?? ev.location,
+      academicYear: academicYear ?? ev.academicYear,
+      participationCategory: participationCategory ?? ev.participationCategory,
+      startDate: startDate ?? ev.startDate,
+      endDate: endDate ?? ev.endDate,
+      totalHours: totalHours ?? ev.totalHours,
+      ...(hasCertificate !== undefined && { hasCertificate: bool(hasCertificate) })
+    });
 
-    event.title = title || event.title;
-    event.description = description || event.description;
-    event.location = location || event.location;
-    event.academicYear = academicYear || event.academicYear;
-    event.participationCategory = participationCategory || event.participationCategory;
-    event.startDate = startDate || event.startDate;
-    event.endDate = endDate || event.endDate;
-    event.totalHours = totalHours || event.totalHours;
-
-    await event.save();
-    return sendSuccess(res, event, 'Event updated successfully');
-  } catch (error) {
-    next(error);
-  }
+    await ev.save();
+    return sendSuccess(res, ev, 'Event updated successfully');
+  } catch (err) { next(err); }
 };
 
-// Delete event (admin)
 exports.deleteEvent = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const event = await Event.findByPk(id);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    await event.destroy();
-    return sendSuccess(res, null, 'Event deleted successfully');
-  } catch (error) {
-    next(error);
-  }
+    const ev = await Event.findByPk(req.params.id);
+    if (!ev) throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    await ev.destroy();
+    return sendSuccess(res, null, 'Event deleted');
+  } catch (err) { next(err); }
 };
 
-// Faculty Registration: Register for event
+/* ─────────────────────── REGISTRATION APIs ───────────────────── */
 exports.registerForEvent = async (req, res, next) => {
   try {
     const eventId = req.params.id;
-    const userId = req.user.id;
+    const userId  = req.user.id;
 
-    const event = await Event.findByPk(eventId);
-    if (!event) {
-      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
-    }
-    if (event.status !== 'published') {
+    const ev = await Event.findByPk(eventId);
+    if (!ev) throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    if (ev.status !== 'published')
       throw new AppError('You can only register for published events', 400, 'INVALID_EVENT_STATUS');
-    }
 
-    const existingRegistration = await Registration.findOne({ where: { eventId, userId } });
-    if (existingRegistration) {
-      throw new AppError('You have already registered for this event', 400, 'DUPLICATE_REGISTRATION');
-    }
+    if (await Registration.findOne({ where: { eventId, userId } }))
+      throw new AppError('Already registered', 400, 'DUPLICATE_REGISTRATION');
 
-    const registration = await Registration.create({ eventId, userId });
-    return sendSuccess(res, registration, 'Registered successfully');
-  } catch (error) {
-    next(error);
-  }
+    const reg = await Registration.create({ eventId, userId });
+    return sendSuccess(res, reg, 'Registered');
+  } catch (err) { next(err); }
 };
 
-// Faculty Registration: Unregister for event
 exports.unregisterFromEvent = async (req, res, next) => {
   try {
     const eventId = req.params.id;
-    const userId = req.user.id;
+    const userId  = req.user.id;
     await Registration.destroy({ where: { eventId, userId } });
-    return sendSuccess(res, null, 'Unregistered successfully');
-  } catch (error) {
-    next(error);
-  }
+    return sendSuccess(res, null, 'Unregistered');
+  } catch (err) { next(err); }
 };

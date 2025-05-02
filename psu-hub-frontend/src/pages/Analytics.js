@@ -1,3 +1,4 @@
+//psu-hub-frontend/src/pages/Analytics.js
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import {
@@ -24,7 +25,9 @@ import {
   Fade,
   Card,
   CardContent,
-  CardActions // <-- We now use it!
+  CardActions,
+  IconButton,
+  Chip    
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -33,6 +36,8 @@ import { toast } from 'react-toastify';
 import api from '../api/axiosInstance';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ReplayIcon       from '@mui/icons-material/Replay';
 
 import EventCard from '../components/EventCard';
 
@@ -362,9 +367,10 @@ export default function Analytics() {
 
               {/* CardActions example */}
               <CardActions sx={{ p: 2 }}>
-                <Button size="small" onClick={handleRefreshOverview}>
-                  Refresh
-                </Button>
+              <IconButton size="small" onClick={handleRefreshOverview} title="Refresh">
+  <ReplayIcon fontSize="small" />
+</IconButton>
+
                 {/* You can add more actions here if desired */}
               </CardActions>
             </Card>
@@ -542,90 +548,164 @@ export default function Analytics() {
         <DialogContent dividers>
           {selectedEvent ? (
             <>
-              <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
-                <Tab label="Overview" />
-                <Tab label="Attendees" />
-                <Tab label="Survey Feedback" />
-              </Tabs>
-              <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6">{selectedEvent.title}</Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Date:{' '}
-                  {selectedEvent.date
-                    ? new Date(selectedEvent.date).toLocaleDateString()
-                    : 'N/A'}
-                </Typography>
-                <Typography variant="body2">
-                  Location: {selectedEvent.location || 'N/A'}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Attendee Count: {selectedEvent.attendeeCount || 0}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
-                  Status: {selectedEvent.status || 'N/A'}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  {selectedEvent.description}
-                </Typography>
-              </TabPanel>
-              <TabPanel value={tabValue} index={1}>
-                {selectedEvent.Attendances?.length ? (
-                  <Box>
-                    {selectedEvent.Attendances.map((att) => (
-                      <Box
-                        key={att.id}
-                        sx={{ mb: 1, borderBottom: '1px solid #ccc', pb: 1 }}
-                      >
-                        <Typography variant="body2">
-                          {att.User ? att.User.name : 'Unknown'} (
-                          {att.User ? att.User.email : 'N/A'})
-                        </Typography>
-                      </Box>
-                    ))}
-                    <Box
-                      sx={{ mt: 1, display: 'flex', gap: 1, justifyContent: 'flex-end' }}
-                    >
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          if (selectedEvent && selectedEvent.Attendances) {
-                            const exportData = selectedEvent.Attendances.map((att) => ({
-                              Name: att.User ? att.User.name : 'Unknown',
-                              Email: att.User ? att.User.email : 'N/A'
-                            }));
-                            exportToCSV(exportData, 'attendees.csv');
-                          }
-                        }}
-                      >
-                        Export CSV
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          if (selectedEvent && selectedEvent.Attendances) {
-                            const exportData = selectedEvent.Attendances.map((att) => ({
-                              Name: att.User ? att.User.name : 'Unknown',
-                              Email: att.User ? att.User.email : 'N/A'
-                            }));
-                            exportToExcel(exportData, 'attendees.xlsx');
-                          }
-                        }}
-                      >
-                        Export Excel
-                      </Button>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Typography>No attendee details available.</Typography>
-                )}
-              </TabPanel>
-              <TabPanel value={tabValue} index={2}>
-                <Typography variant="body2">
-                  Survey feedback not implemented yet.
-                </Typography>
-              </TabPanel>
+              {/* ---------- TABS ---------- */}
+<Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
+  <Tab label="Overview" />
+  <Tab label={`Registered (${selectedEvent.Registrations?.length || 0})`} />
+  <Tab label={`Attendees (${selectedEvent.Attendances?.length || 0})`} />
+  <Tab label="Survey Feedback" />
+</Tabs>
+
+{/* ---------- OVERVIEW ---------- */}
+<TabPanel value={tabValue} index={0}>
+  <Typography variant="h6">{selectedEvent.title}</Typography>
+  <Typography variant="body2" sx={{ mt: 1 }}>
+    Date:{' '}
+    {selectedEvent.date
+      ? new Date(selectedEvent.date).toLocaleDateString()
+      : 'N/A'}
+  </Typography>
+  <Typography variant="body2">
+    Location: {selectedEvent.location || 'N/A'}
+  </Typography>
+  <Typography variant="body2" sx={{ mt: 1 }}>
+    Attendee Count: {selectedEvent.attendeeCount || 0}
+  </Typography>
+  <Typography variant="body2" sx={{ fontWeight: 'bold', mt: 1 }}>
+    Status: {selectedEvent.status || 'N/A'}
+  </Typography>
+  <Typography variant="body2" sx={{ mt: 2 }}>
+    {selectedEvent.description}
+  </Typography>
+</TabPanel>
+
+{/* ---------- REGISTERED (all sign-ups) ---------- */}
+<TabPanel value={tabValue} index={1}>
+  {selectedEvent.Registrations?.length ? (
+    selectedEvent.Registrations.map((reg) => (
+      <Box
+        key={reg.id}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: '1px solid #eee',
+          py: 1
+        }}
+      >
+        {/* name + email */}
+        <Typography sx={{ flexGrow: 1 }}>
+          {reg.User?.name || 'Unknown'} ({reg.User?.email || 'N/A'})
+        </Typography>
+
+        {/* Already attended → show grey chip */}
+        {reg.attended ? (
+          <Chip
+            label="✓ Attended"
+            color="success"
+            variant="outlined"
+            size="small"
+          />
+        ) : (
+          /* Not yet attended → show button */
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={async () => {
+              try {
+                const resp = await api.patch(
+                  `/admin/registrations/${reg.id}/mark-attended`,
+                  { attended: true }
+                );
+                /* refresh modal with updated event */
+                setSelectedEvent(() => resp.data.data);
+                toast.success('Attendance marked');
+              } catch {
+                toast.error('Could not update');
+              }
+            }}
+          >
+            Mark attended
+          </Button>
+        )}
+      </Box>
+    ))
+  ) : (
+    <Typography>No registrations yet.</Typography>
+  )}
+</TabPanel>
+
+
+{/* ---------- ATTENDEES ---------- */}
+<TabPanel value={tabValue} index={2}>
+  {selectedEvent.Attendances?.length ? (
+    selectedEvent.Attendances.map((att) => (
+      <Box
+        key={att.id}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: '1px solid #eee',
+          py: 1,
+        }}
+      >
+        {/* -------- name + email -------- */}
+        <Typography sx={{ flexGrow: 1 }}>
+          {att.User?.name || 'Unknown'} ({att.User?.email || 'N/A'})
+        </Typography>
+
+        {/* -------- actions -------- */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Download certificate (if already issued) */}
+          {att.Certificate?.fileUrl && (
+            <IconButton
+              size="small"
+              title="Open certificate"
+              onClick={() => window.open(att.Certificate.fileUrl, '_blank')}
+            >
+              <PictureAsPdfIcon fontSize="small" />
+            </IconButton>
+          )}
+
+          {/* Undo attendance (admin only) */}
+          {!att.Certificate?.fileUrl && (
+            <Checkbox
+              checked
+              onChange={async () => {
+                try {
+                  const resp = await api.patch(
+                    `/admin/registrations/${att.id}/mark-attended`,
+                    { attended: false },
+                  );
+                  // refresh local event data with the server response
+                  setSelectedEvent(() => resp.data.data);
+                  toast.success('Attendance reverted');
+                } catch {
+                  toast.error('Could not update');
+                }
+              }}
+            />
+          )}
+        </Box>
+      </Box>
+    ))
+  ) : (
+    <Typography>No one has attended yet.</Typography>
+  )}
+</TabPanel>
+
+
+{/* ---------- SURVEY ---------- */}
+<TabPanel value={tabValue} index={3}>
+  {selectedEvent.SurveySummary ? (
+    <pre style={{ whiteSpace: 'pre-wrap' }}>
+      {JSON.stringify(selectedEvent.SurveySummary, null, 2)}
+    </pre>
+  ) : (
+    <Typography>No survey data yet.</Typography>
+  )}
+</TabPanel>
+
+
             </>
           ) : (
             <Typography>Loading event data...</Typography>

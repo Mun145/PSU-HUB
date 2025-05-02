@@ -7,6 +7,10 @@ const Event = require('./Event');
 const Attendance = require('./Attendance');
 const Registration = require('./Registration');
 const ActivityLog = require('./ActivityLog');
+const Survey        = require('./Survey');
+const SurveyQuestion= require('./SurveyQuestion');
+const SurveyResponse= require('./SurveyResponse');
+const Certificate    = require('./Certificate');
 
 // Role associations
 Role.hasMany(User, {
@@ -56,6 +60,39 @@ Registration.belongsTo(Event, {
   foreignKey: 'eventId'
 });
 
+// ── Survey & Certificate relations ────────────────────────────────
+Event.hasOne( Survey,          { foreignKey: 'eventId', onDelete: 'CASCADE' });
+Survey.belongsTo( Event,       { foreignKey: 'eventId' });
+
+Survey.hasMany(  SurveyQuestion, { as: 'questions',  foreignKey: 'surveyId', onDelete: 'CASCADE' });
+SurveyQuestion.belongsTo( Survey, { foreignKey: 'surveyId' });
+
+Survey.hasMany(  SurveyResponse, { foreignKey: 'surveyId', onDelete: 'CASCADE' });
+SurveyResponse.belongsTo( Survey, { foreignKey: 'surveyId' });
+
+User.hasMany(    SurveyResponse, { foreignKey: 'userId',   onDelete: 'CASCADE' });
+SurveyResponse.belongsTo( User,   { foreignKey: 'userId' });
+
+/*  NEW: certificate table  */
+User.hasMany(    Certificate,    { foreignKey: 'userId',  onDelete: 'CASCADE' });
+Certificate.belongsTo( User,      { foreignKey: 'userId' });
+
+Event.hasMany(   Certificate,    { foreignKey: 'eventId', onDelete: 'CASCADE' });
+Certificate.belongsTo( Event,     { foreignKey: 'eventId' });
+
+Attendance.hasOne(Certificate, {
+    foreignKey : 'userId',          
+    sourceKey  : 'user_id',
+    as         : 'Certificate',     
+    constraints: false              
+  });
+  Certificate.belongsTo(Attendance, {
+    foreignKey : 'userId',
+    targetKey  : 'user_id',
+    constraints: false
+  });
+  
+
 module.exports = {
   sequelize,
   User,
@@ -63,5 +100,9 @@ module.exports = {
   Event,
   Attendance,
   Registration,
-  ActivityLog  
+  ActivityLog,
+  Survey,
+  SurveyQuestion,
+  SurveyResponse,
+  Certificate
 };

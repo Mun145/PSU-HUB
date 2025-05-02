@@ -10,7 +10,9 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -31,6 +33,7 @@ const CreateEvent = () => {
   const [academicYear, setAcademicYear] = useState('');
   const [participationCategory, setParticipationCategory] = useState('P');
   const [totalHours, setTotalHours] = useState('');
+  const [hasCertificate, setHasCertificate] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +52,7 @@ const CreateEvent = () => {
       formData.append('academicYear', academicYear);
       formData.append('participationCategory', participationCategory);
       formData.append('totalHours', totalHours);
+      formData.append('hasCertificate', hasCertificate ? 'true' : 'false');
 
       if (imageFile) {
         formData.append('image', imageFile);
@@ -66,6 +70,7 @@ const CreateEvent = () => {
       setAcademicYear('');
       setParticipationCategory('P');
       setTotalHours('');
+      setHasCertificate(false);
       setImageFile(null);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error creating event');
@@ -146,6 +151,15 @@ const CreateEvent = () => {
                 type="number"
                 value={totalHours}
                 onChange={(e) => setTotalHours(e.target.value)}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={hasCertificate}
+                    onChange={(e) => setHasCertificate(e.target.checked)}
+                  />
+                }
+                label="Issue certificates for this event"
               />
               <div>
                 <Typography variant="body2" sx={{ mb: 1 }}>

@@ -1,4 +1,4 @@
-// models/Attendance.js
+//psu-hub-backend/models/Attendance.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 

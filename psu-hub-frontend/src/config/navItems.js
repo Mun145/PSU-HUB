@@ -11,6 +11,8 @@ const navItems = [
   // For admin, separate pages:
   { label: 'Admin Dashboard', path: '/admin-dashboard', roles: ['admin'] },
   { label: 'Manage Events', path: '/manage-events', roles: ['admin'] },
+  { label:'Certificates', path:'/certificates-admin', roles:['admin'] },
+
 
   { label: 'Create Event', path: '/create-event', roles: ['admin'] },
   { label: 'Analytics', path: '/analytics', roles: ['admin'] },

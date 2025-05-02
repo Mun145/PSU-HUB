@@ -1,3 +1,4 @@
+// src/pages/FacultyDashboardView.js
 import React, { useEffect, useState } from 'react';
 import {
   Container,
@@ -10,7 +11,9 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
@@ -19,70 +22,79 @@ import EventCard from '../components/EventCard';
 
 export default function FacultyDashboardView({ events, setEvents }) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [showPast, setShowPast] = useState(false);
 
-  // On mount, fetch published events with registration status
+  /* ───────────────────────────────── STATE ───────────────────────────────── */
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [sortOrder,   setSortOrder]     = useState('asc');
+  const [range,       setRange]         = useState('all');  // all | upcoming | past
+
+  /* ─────────────────────────────── FETCH DATA ────────────────────────────── */
   useEffect(() => {
-    fetchFacultyEvents();
-    // eslint-disable-next-line
+    (async () => {
+      try {
+        const res = await api.get('/events/faculty');
+        // backend already adds isRegistered
+        setEvents(res.data.data || []);
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Error fetching faculty events');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchFacultyEvents = async () => {
+  /* ─────────────────────────── FILTER & SORT ────────────────────────────── */
+  const filteredEvents = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    return (events || [])
+      .filter(ev => ev.status === 'published')
+      .filter(ev => {
+        if (!q) return true;
+        return (
+          ev.title.toLowerCase().includes(q) ||
+          ev.description.toLowerCase().includes(q)
+        );
+      })
+      .filter(ev => {
+        /* range filter */
+        const d = new Date(ev.startDate || ev.date);
+        if (Number.isNaN(+d)) return true;          // weird / missing date
+        const today = new Date();
+        if (range === 'upcoming') return d >= today;
+        if (range === 'past')     return d <  today;
+        return true; // 'all'
+      })
+      .sort((a, b) => {
+        const ad = new Date(a.startDate || a.date);
+        const bd = new Date(b.startDate || b.date);
+        return sortOrder === 'asc' ? ad - bd : bd - ad;
+      });
+  }, [events, searchQuery, range, sortOrder]);
+
+  /* ───────────────────────── REGISTER / UNREGISTER ───────────────────────── */
+  const register   = async ev => {
     try {
-      const res = await api.get('/events/faculty');
-      // This returns an array of events with an added "isRegistered" field
-      setEvents(res.data.data || []);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Error fetching faculty events');
-    }
-  };
-
-  const getFilteredEvents = () => {
-    let filtered = events.filter((ev) => ev.status === 'published');
-    const query = searchQuery.trim().toLowerCase();
-    filtered = filtered.filter((ev) => {
-      const inTitle = ev.title.toLowerCase().includes(query);
-      const inDesc = ev.description.toLowerCase().includes(query);
-      return query === '' || inTitle || inDesc;
-    });
-    filtered = filtered.filter((ev) => {
-      const d = ev.startDate || ev.date;
-      if (!d) return true;
-      const dateVal = new Date(d);
-      return showPast ? dateVal < new Date() : dateVal >= new Date();
-    });
-    filtered.sort((a, b) => {
-      const aDate = new Date(a.startDate || a.date);
-      const bDate = new Date(b.startDate || b.date);
-      return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
-    });
-    return filtered;
-  };
-
-  const filteredEvents = getFilteredEvents();
-
-  const handleRegister = async (event) => {
-    try {
-      await api.post(`/events/${event.id}/register`);
+      await api.post(`/events/${ev.id}/register`);
       toast.success('Registered successfully');
-      fetchFacultyEvents(); // re-fetch to update registration status
+      ev.isRegistered = true;  // quick UI feedback
+      setEvents([...events]);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error registering');
     }
   };
 
-  const handleUnregister = async (event) => {
+  const unregister = async ev => {
     try {
-      await api.delete(`/events/${event.id}/unregister`);
+      await api.delete(`/events/${ev.id}/unregister`);
       toast.success('Unregistered successfully');
-      fetchFacultyEvents();
+      ev.isRegistered = false;
+      setEvents([...events]);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error unregistering');
     }
   };
 
+  /* ───────────────────────────────── UI ──────────────────────────────────── */
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -90,48 +102,58 @@ export default function FacultyDashboardView({ events, setEvents }) {
       </Typography>
 
       <Paper sx={{ p: 3 }}>
+        {/* ───── Toolbar ───── */}
         <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
           <TextField
             label="Search events"
-            variant="outlined"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
+            size="small"
           />
           <Button variant="outlined" onClick={() => setSearchQuery('')}>
             Clear
           </Button>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel>Sort By Date</InputLabel>
+
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>Sort by date</InputLabel>
             <Select
               value={sortOrder}
-              label="Sort By Date"
-              onChange={(e) => setSortOrder(e.target.value)}
+              label="Sort by date"
+              onChange={e => setSortOrder(e.target.value)}
             >
-              <MenuItem value="asc">Oldest First</MenuItem>
-              <MenuItem value="desc">Newest First</MenuItem>
+              <MenuItem value="asc">Oldest first</MenuItem>
+              <MenuItem value="desc">Newest first</MenuItem>
             </Select>
           </FormControl>
-          <Button
-            variant={showPast ? 'contained' : 'outlined'}
-            onClick={() => setShowPast(!showPast)}
+
+          {/* NEW range selector */}
+          <ToggleButtonGroup
+            exclusive
+            color="primary"
+            size="small"
+            value={range}
+            onChange={(e, val) => val && setRange(val)}
           >
-            {showPast ? 'Show Upcoming' : 'Show Past'}
-          </Button>
+            <ToggleButton value="all">All</ToggleButton>
+            <ToggleButton value="upcoming">Upcoming</ToggleButton>
+            <ToggleButton value="past">Past</ToggleButton>
+          </ToggleButtonGroup>
         </Box>
 
+        {/* ───── Results ───── */}
         {filteredEvents.length === 0 ? (
           <Typography sx={{ mt: 2 }}>No events found.</Typography>
         ) : (
-          <Grid container spacing={3} sx={{ mt: 2 }}>
-            {filteredEvents.map((event) => (
-              <Grid item xs={12} sm={6} md={4} key={event.id}>
+          <Grid container spacing={3}>
+            {filteredEvents.map(ev => (
+              <Grid item xs={12} sm={6} md={4} key={ev.id}>
                 <EventCard
-                  event={event}
-                  onCardClick={() => navigate(`/event/${event.id}`)}
-                  onRegister={handleRegister}
-                  onUnregister={handleUnregister}
-                  isRegistered={event.isRegistered}
-                  showStatus={false} // Hide status marker for faculty
+                  event={ev}
+                  onCardClick={() => navigate(`/event/${ev.id}`)}
+                  onRegister={register}
+                  onUnregister={unregister}
+                  isRegistered={ev.isRegistered}
+                  showStatus={false}
                 />
               </Grid>
             ))}

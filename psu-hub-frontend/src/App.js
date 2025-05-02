@@ -30,7 +30,6 @@ const Register = React.lazy(() => import('./pages/Register'));
 const CreateEvent = React.lazy(() => import('./pages/CreateEvent'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const PendingEvents = React.lazy(() => import('./pages/PendingEvents'));
-const ScanAttendance = React.lazy(() => import('./pages/ScanAttendance'));
 const Survey = React.lazy(() => import('./pages/Survey'));
 const Analytics = React.lazy(() => import('./pages/Analytics'));
 const Certificate = React.lazy(() => import('./pages/Certificate'));
@@ -40,10 +39,14 @@ const EditEvent = React.lazy(() => import('./pages/EditEvent'));
 const EventDetails = React.lazy(() => import('./pages/EventDetails'));
 const MyAttendance = React.lazy(() => import('./pages/MyAttendance'));
 const NotAuthorized = React.lazy(() => import('./pages/NotAuthorized'));
-
-// NEW Lazy Imports for admin pages
 const ManageEventsView = React.lazy(() => import('./pages/ManageEventsView'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const AttendanceLogin      = React.lazy(() => import('./pages/AttendanceLogin'));
+const AttendanceConfirmed  = React.lazy(() => import('./pages/AttendanceConfirmed'));
+const SurveyBuilder = React.lazy(() => import('./pages/SurveyBuilder'));
+const TakeSurvey = React.lazy(() => import('./pages/TakeSurvey'));
+const CertificatesAdmin = React.lazy(()=>import('./pages/CertificatesAdmin'));
+
 
 const drawerWidth = 240;
 
@@ -199,63 +202,113 @@ function App() {
         </Drawer>
       </Box>
 
-      {/* Main content area */}
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
-      >
-        <Toolbar />
-        <Suspense fallback={<div>Loading...</div>}>
-          <Routes>
-            {/* Home route */}
-            <Route
-              path="/"
-              element={userRole ? <Home /> : <Navigate to="/login" replace />}
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+    {/* ───────── Main content area ───────── */}
+<Box
+  component="main"
+  sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+>
+  <Toolbar />
 
-            {/* Common routes */}
-            <Route path="/notifications" element={<ProtectedRoute element={<NotificationsPage />} />} />
-            <Route path="/my-attendance" element={<ProtectedRoute element={<MyAttendance />} />} />
-            <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+  <Suspense fallback={<div>Loading...</div>}>
+    <Routes>
+      {/* Home */}
+      <Route
+        path="/"
+        element={userRole ? <Home /> : <Navigate to="/login" replace />}
+      />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-            {/* Dashboard for faculty and psu_admin */}
-            <Route
-              path="/dashboard"
-              element={<ProtectedRoute element={<Dashboard />} roles={['faculty', 'psu_admin']} />}
-            />
+      {/* Common routes */}
+      <Route
+        path="/notifications"
+        element={<ProtectedRoute element={<NotificationsPage />} />}
+      />
+      <Route
+        path="/my-attendance"
+        element={<ProtectedRoute element={<MyAttendance />} />}
+      />
+      <Route
+        path="/profile"
+        element={<ProtectedRoute element={<Profile />} />}
+      />
 
-            {/* New Admin routes */}
-            <Route
-              path="/admin-dashboard"
-              element={<ProtectedRoute element={<AdminDashboard />} roles={['admin']} />}
-            />
-            <Route
-              path="/manage-events"
-              element={<ProtectedRoute element={<ManageEventsView />} roles={['admin']} />}
-            />
+      {/* Faculty / PSU-Admin */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute
+            element={<Dashboard />}
+            roles={['faculty', 'psu_admin']}
+          />
+        }
+      />
+      <Route
+        path="/survey"
+        element={
+          <ProtectedRoute
+            element={<TakeSurvey />}
+            roles={['faculty', 'psu_admin']}
+          />
+        }
+      />
 
-            {/* Admin-only create event and analytics */}
-            <Route path="/create-event" element={<ProtectedRoute element={<CreateEvent />} roles={['admin']} />} />
-            <Route path="/analytics" element={<ProtectedRoute element={<Analytics />} roles={['admin']} />} />
+      {/* ─── Admin routes ─── */}
+      <Route
+        path="/admin-dashboard"
+        element={<ProtectedRoute element={<AdminDashboard />} roles={['admin']} />}
+      />
+      <Route
+        path="/manage-events"
+        element={<ProtectedRoute element={<ManageEventsView />} roles={['admin']} />}
+      />
+      <Route
+        path="/certificates-admin"
+        element={<ProtectedRoute element={<CertificatesAdmin />} roles={['admin']} />}
+      />
+      <Route
+        path="/create-event"
+        element={<ProtectedRoute element={<CreateEvent />} roles={['admin']} />}
+      />
+      <Route
+        path="/analytics"
+        element={<ProtectedRoute element={<Analytics />} roles={['admin']} />}
+      />
+      <Route
+        path="/admin/events/:id/survey"
+        element={<ProtectedRoute element={<SurveyBuilder />} roles={['admin']} />}
+      />
 
-            {/* PSU admin only */}
-            <Route path="/pending-events" element={<ProtectedRoute element={<PendingEvents />} roles={['psu_admin']} />} />
+      {/* PSU-Admin only */}
+      <Route
+        path="/pending-events"
+        element={<ProtectedRoute element={<PendingEvents />} roles={['psu_admin']} />}
+      />
 
-            {/* Other common routes */}
-            <Route path="/scan-attendance" element={<ProtectedRoute element={<ScanAttendance />} />} />
-            <Route path="/survey" element={<ProtectedRoute element={<Survey />} />} />
-            <Route path="/certificate" element={<ProtectedRoute element={<Certificate />} />} />
-            <Route path="/edit-event/:id" element={<ProtectedRoute element={<EditEvent />} />} />
-            <Route path="/event/:id" element={<ProtectedRoute element={<EventDetails />} />} />
-            <Route path="/not-authorized" element={<NotAuthorized />} />
+      {/* Misc */}
+      <Route
+        path="/certificate"
+        element={<ProtectedRoute element={<Certificate />} />}
+      />
+      <Route
+        path="/edit-event/:id"
+        element={<ProtectedRoute element={<EditEvent />} />}
+      />
+      <Route
+        path="/event/:id"
+        element={<ProtectedRoute element={<EventDetails />} />}
+      />
+      <Route path="/not-authorized" element={<NotAuthorized />} />
 
-            {/* Fallback for unknown routes */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </Box>
+      {/* Attendance QR flow (public) */}
+      <Route path="/attendance-login" element={<AttendanceLogin />} />
+      <Route path="/attendance-confirmed" element={<AttendanceConfirmed />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Suspense>
+</Box>
     </Box>
   );
 }

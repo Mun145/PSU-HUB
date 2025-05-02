@@ -112,11 +112,16 @@ export default function AdminEventsTab({
 
   const handleDownloadQR = () => {
     if (!previewEvent || !previewEvent.qr_code) return;
-    const link = document.createElement('a');
-    link.href     = fullUrl(previewEvent.qr_code);
-    // e.g. "MyEvent_qr.png"
-    link.download = `${previewEvent.title.replace(/\s+/g, '_')}_qr.png`;
-    link.click();
+    (async () => {
+            const resp = await fetch(fullUrl(previewEvent.qr_code), { mode: 'cors' });
+            const blob = await resp.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href      = url;
+            a.download  = `${previewEvent.title.replace(/\s+/g, '_')}_qr.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+          })();
   };
 
   if (!list.length) {
@@ -201,91 +206,111 @@ export default function AdminEventsTab({
         })}
       </Grid>
 
-      {/* Main preview modal */}
-      <Dialog open={previewOpen} onClose={closePreview} maxWidth="sm" fullWidth>
-        <DialogTitle>Event Details</DialogTitle>
-        <DialogContent dividers>
-          {previewEvent ? (
-            <>
-              {previewEvent.imageUrl && (
-                <Box
-                  component="img"
-                  src={previewEvent.imageUrl}
-                  alt="Event Preview"
-                  sx={{ width: '100%', mb: 2, borderRadius: 1 }}
-                />
-              )}
+{/* ───── Main preview modal ───── */}
+<Dialog open={previewOpen} onClose={closePreview} maxWidth="sm" fullWidth>
+  <DialogTitle>Event Details</DialogTitle>
 
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                {previewEvent.title}
-              </Typography>
+  <DialogContent dividers>
+    {previewEvent ? (
+      <>
+        {previewEvent.imageUrl && (
+          <Box
+            component="img"
+            src={previewEvent.imageUrl}
+            alt="Event Preview"
+            sx={{ width: '100%', mb: 2, borderRadius: 1 }}
+          />
+        )}
 
-              {/* Start/End date */}
-              {previewEvent.startDate && (
-                <Typography variant="body2">
-                  Start: {new Date(previewEvent.startDate).toLocaleDateString()}
-                </Typography>
-              )}
-              {previewEvent.endDate && (
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  End: {new Date(previewEvent.endDate).toLocaleDateString()}
-                </Typography>
-              )}
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          {previewEvent.title}
+        </Typography>
 
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Status: {previewEvent.status}
-              </Typography>
+        {/* dates */}
+        {previewEvent.startDate && (
+          <Typography variant="body2">
+            Start:&nbsp;
+            {new Date(previewEvent.startDate).toLocaleDateString()}
+          </Typography>
+        )}
+        {previewEvent.endDate && (
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            End:&nbsp;
+            {new Date(previewEvent.endDate).toLocaleDateString()}
+          </Typography>
+        )}
 
-              {previewEvent.description && (
-                <Typography variant="body2" sx={{ mb: 2 }}>
-                  {previewEvent.description}
-                </Typography>
-              )}
-            </>
-          ) : (
-            <Typography>No event selected.</Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          {/* Show "QR Code" button if the event has a qr_code */}
-          {previewEvent?.qr_code && (
-            <Button variant="outlined" onClick={handleOpenQrDialog}>
-              QR Code
-            </Button>
-          )}
-          <Button onClick={closePreview}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          Status: {previewEvent.status}
+        </Typography>
 
-      {/* Secondary QR Code dialog */}
-      <Dialog open={qrDialogOpen} onClose={handleCloseQrDialog}>
-        <DialogTitle>QR Code</DialogTitle>
-        <DialogContent dividers sx={{ textAlign: 'center' }}>
-          {previewEvent?.qr_code ? (
-            <Box>
-              <Box
-                component="img"
-                src={fullUrl(previewEvent.qr_code)}
-                alt="QR Code"
-                sx={{ width: '250px', mb: 2 }}
-              />
-              <Typography variant="body2">
-                This QR is for event: {previewEvent.title}
-              </Typography>
-            </Box>
-          ) : (
-            <Typography>No QR code available.</Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          {previewEvent?.qr_code && (
-            <Button variant="outlined" onClick={handleDownloadQR}>
-              Download
-            </Button>
-          )}
-          <Button onClick={handleCloseQrDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        {previewEvent.description && (
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            {previewEvent.description}
+          </Typography>
+        )}
+      </>
+    ) : (
+      <Typography>No event selected.</Typography>
+    )}
+  </DialogContent>
+
+  <DialogActions>
+    {/* open Survey Builder for this event */}
+    {previewEvent && (
+      <Button
+        variant="outlined"
+        onClick={() => {
+          closePreview();
+          navigate(`/admin/events/${previewEvent.id}/survey`);
+        }}
+      >
+        Survey Builder
+      </Button>
+    )}
+
+    {/* QR button (only if event has QR) */}
+    {previewEvent?.qr_code && (
+      <Button variant="outlined" onClick={handleOpenQrDialog}>
+        QR Code
+      </Button>
+    )}
+
+    <Button onClick={closePreview}>Close</Button>
+  </DialogActions>
+</Dialog>
+
+{/* ───── Secondary QR-code dialog ───── */}
+<Dialog open={qrDialogOpen} onClose={handleCloseQrDialog}>
+  <DialogTitle>QR Code</DialogTitle>
+
+  <DialogContent dividers sx={{ textAlign: 'center' }}>
+    {previewEvent?.qr_code ? (
+      <Box>
+        <Box
+          component="img"
+          src={fullUrl(previewEvent.qr_code)}
+          alt="QR Code"
+          sx={{ width: 250, mb: 2 }}
+        />
+        <Typography variant="body2">
+          This QR is for event: {previewEvent.title}
+        </Typography>
+      </Box>
+    ) : (
+      <Typography>No QR code available.</Typography>
+    )}
+  </DialogContent>
+
+  <DialogActions>
+    {previewEvent?.qr_code && (
+      <Button variant="outlined" onClick={handleDownloadQR}>
+        Download
+      </Button>
+    )}
+    <Button onClick={handleCloseQrDialog}>Close</Button>
+  </DialogActions>
+</Dialog>
     </>
   );
 }

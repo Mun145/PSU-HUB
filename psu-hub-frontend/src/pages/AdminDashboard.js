@@ -11,6 +11,8 @@ import { Doughnut } from 'react-chartjs-2';
 import api from '../api/axiosInstance';
 import { toast } from 'react-toastify';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { useNavigate } from 'react-router-dom';
+
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -20,6 +22,8 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [dailyTasks, setDailyTasks] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     // Fetch quick stats from analytics endpoint
@@ -139,9 +143,10 @@ export default function AdminDashboard() {
               <Button
                 variant="text"
                 size="small"
-                onClick={() =>
-                  window.location.href = `/manage-events?eventId=${activity.referenceId}`
-                }
+                onClick={(e) => {
+                  e.stopPropagation();                 // don’t trigger parent click / reload
+                  navigate(`/manage-events?eventId=${activity.referenceId}`);
+                }}
               >
                 View
               </Button>
