@@ -7,15 +7,33 @@ import {
   Box,
   CircularProgress,
   Chip,
-  Button
+  Button,
+  Stack,
+  Grid,
+  Divider,
+  IconButton,
+  Skeleton,
+  useTheme,
+  useMediaQuery,
+  Alert
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { toast } from 'react-toastify';
+import EventIcon from '@mui/icons-material/Event';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SchoolIcon from '@mui/icons-material/School';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DescriptionIcon from '@mui/icons-material/Description';
+import InfoIcon from '@mui/icons-material/Info';
+import { Helmet } from 'react-helmet';
 
 function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +42,6 @@ function EventDetails() {
     api
       .get(`/events/${id}`)
       .then((res) => {
-        // If using sendSuccess, data might be in res.data.data:
         const fetched = res.data.data || res.data;
         setEvent(fetched);
       })
@@ -36,21 +53,39 @@ function EventDetails() {
 
   if (loading) {
     return (
-      <Container sx={{ mt: 4, textAlign: 'center' }}>
-        <CircularProgress />
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Paper sx={{ p: 4 }}>
+          <Skeleton variant="text" width="60%" height={40} sx={{ mb: 2 }} />
+          <Skeleton variant="rectangular" height={300} sx={{ mb: 3, borderRadius: 2 }} />
+          <Grid container spacing={2}>
+            {[1, 2, 3, 4].map((index) => (
+              <Grid item xs={12} key={index}>
+                <Skeleton variant="rectangular" height={56} />
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
       </Container>
     );
   }
 
   if (!event) {
     return (
-      <Container sx={{ mt: 4 }}>
-        <Typography variant="h6">Event not found.</Typography>
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Event not found. The event may have been removed or you may not have permission to view it.
+        </Alert>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/dashboard')}
+        >
+          Back to Dashboard
+        </Button>
       </Container>
     );
   }
 
-  // Format dates if they exist
   const startDateStr = event.startDate
     ? new Date(event.startDate).toLocaleDateString()
     : null;
@@ -59,70 +94,151 @@ function EventDetails() {
     : null;
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      {/* Optional Hero Image */}
-      {event.imageUrl && (
-        <Box
-          sx={{
-            width: '100%',
-            height: 300,
-            background: `url(${event.imageUrl}) center/cover no-repeat`,
-            borderRadius: 2,
-            mb: 2
-          }}
-        />
-      )}
+    <>
+      <Helmet>
+        <title>PSU Hub – {event.title}</title>
+      </Helmet>
 
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          {event.title}
-        </Typography>
-
-        {/* Basic Info Row (Date, location, academic year) */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          {startDateStr && endDateStr && (
-            <Chip label={`${startDateStr} - ${endDateStr}`} variant="outlined" />
-          )}
-          {/* If there's only a startDate (no endDate) */}
-          {!endDateStr && startDateStr && (
-            <Chip label={startDateStr} variant="outlined" />
-          )}
-          {event.location && (
-            <Chip label={event.location} variant="outlined" />
-          )}
-          {event.academicYear && (
-            <Chip label={`AY ${event.academicYear}`} variant="outlined" />
-          )}
-        </Box>
-
-        {/* Description */}
-        <Typography variant="body1" sx={{ mb: 2 }}>
-          {event.description}
-        </Typography>
-
-        {/* Additional fields example: totalHours */}
-        {event.totalHours && (
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Total Hours: {event.totalHours}
-          </Typography>
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        {/* Hero Image */}
+        {event.imageUrl && (
+          <Box
+            sx={{
+              width: '100%',
+              height: { xs: 200, sm: 300 },
+              background: `url(${event.imageUrl}) center/cover no-repeat`,
+              borderRadius: 2,
+              mb: 3,
+              boxShadow: 2
+            }}
+          />
         )}
 
-        {/* Status */}
-        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 2 }}>
-          Status: {event.status || 'N/A'}
-        </Typography>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 4,
+            borderRadius: 2,
+            backgroundColor: 'background.paper'
+          }}
+        >
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
+            <EventIcon color="primary" sx={{ fontSize: 40 }} />
+            <Box>
+              <Typography 
+                variant="h4" 
+                component="h1"
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: 'primary.main'
+                }}
+              >
+                {event.title}
+              </Typography>
+              <Typography 
+                variant="subtitle1" 
+                color="text.secondary"
+              >
+                Event Details
+              </Typography>
+            </Box>
+          </Stack>
 
-        {/* 
-          If you had a "Survey" or "Register" button, you could place it below.
-          Here we just show a "Back to Dashboard" for convenience.
-        */}
-        <Box sx={{ mt: 2 }}>
-          <Button variant="outlined" onClick={() => navigate('/dashboard')}>
-            Back to Dashboard
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
+          {/* Event Status */}
+          <Alert 
+            severity={event.status === 'published' ? 'success' : 'info'} 
+            icon={<InfoIcon />}
+            sx={{ mb: 3 }}
+          >
+            Status: {event.status || 'N/A'}
+          </Alert>
+
+          {/* Basic Info */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <EventIcon color="action" />
+                <Typography variant="body1">
+                  {startDateStr && endDateStr 
+                    ? `${startDateStr} - ${endDateStr}`
+                    : startDateStr || 'No date set'}
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <LocationOnIcon color="action" />
+                <Typography variant="body1">
+                  {event.location || 'Location not specified'}
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <SchoolIcon color="action" />
+                <Typography variant="body1">
+                  {event.academicYear ? `Academic Year: ${event.academicYear}` : 'No academic year set'}
+                </Typography>
+              </Stack>
+            </Grid>
+            {event.totalHours && (
+              <Grid item xs={12} sm={6}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <AccessTimeIcon color="action" />
+                  <Typography variant="body1">
+                    Total Hours: {event.totalHours}
+                  </Typography>
+                </Stack>
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Description */}
+          <Box sx={{ mb: 3 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+              <DescriptionIcon color="action" />
+              <Typography variant="h6">Description</Typography>
+            </Stack>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                whiteSpace: 'pre-wrap',
+                lineHeight: 1.6
+              }}
+            >
+              {event.description}
+            </Typography>
+          </Box>
+
+          {/* Action Buttons */}
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={2} 
+            sx={{ mt: 4 }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/dashboard')}
+              fullWidth={isMobile}
+            >
+              Back to Dashboard
+            </Button>
+            {event.hasCertificate && (
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth={isMobile}
+              >
+                View Certificate
+              </Button>
+            )}
+          </Stack>
+        </Paper>
+      </Container>
+    </>
   );
 }
 

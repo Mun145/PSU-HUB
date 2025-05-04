@@ -5,65 +5,85 @@ import {
   Typography,
   Paper,
   Box,
-  Button
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  CardHeader,
+  IconButton,
+  Chip,
+  Stack,
+  Divider,
+  LinearProgress,
+  Tooltip,
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  ListItemButton,
+  CircularProgress
 } from '@mui/material';
+import {
+  Event as EventIcon,
+  CheckCircle as CheckCircleIcon,
+  People as PeopleIcon,
+  TrendingUp as TrendingUpIcon,
+  Notifications as NotificationsIcon,
+  Assignment as AssignmentIcon,
+  Visibility as VisibilityIcon,
+  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
+  CheckBox as CheckBoxIcon
+} from '@mui/icons-material';
 import { Doughnut } from 'react-chartjs-2';
 import api from '../api/axiosInstance';
 import { toast } from 'react-toastify';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
 import { useNavigate } from 'react-router-dom';
 
-
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, ChartTooltip, Legend);
 
 export default function AdminDashboard() {
-  // States for dynamic content
   const [quickStats, setQuickStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [dailyTasks, setDailyTasks] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-
   useEffect(() => {
-    // Fetch quick stats from analytics endpoint
-    api.get('/analytics/overview')
-      .then((res) => setQuickStats(res.data.data))
-      .catch((err) => {
-        toast.error('Error fetching admin dashboard stats');
-      });
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [statsRes, activityRes, tasksRes, announcementsRes] = await Promise.all([
+          api.get('/analytics/overview'),
+          api.get('/admin/recent-activity'),
+          api.get('/admin/daily-tasks'),
+          api.get('/admin/announcements')
+        ]);
 
-    // Fetch recent activity from new endpoint
-    api.get('/admin/recent-activity')
-      .then((res) => setRecentActivity(res.data.data))
-      .catch((err) => {
-        toast.error('Error fetching recent activity');
-      });
+        setQuickStats(statsRes.data.data);
+        setRecentActivity(activityRes.data.data);
+        setDailyTasks(tasksRes.data.data);
+        setAnnouncements(announcementsRes.data.data);
+      } catch (err) {
+        toast.error('Error loading dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Fetch daily tasks from new endpoint
-    api.get('/admin/daily-tasks')
-      .then((res) => setDailyTasks(res.data.data))
-      .catch((err) => {
-        toast.error('Error fetching daily tasks');
-      });
-
-    // Fetch announcements from new endpoint
-    api.get('/admin/announcements')
-      .then((res) => setAnnouncements(res.data.data))
-      .catch((err) => {
-        toast.error('Error fetching announcements');
-      });
+    fetchData();
   }, []);
 
-  // Render a small donut chart for attendance ratio
   const renderDonutChart = (attended, registered) => {
     const data = {
       labels: ['Attended', 'Not Attended'],
       datasets: [
         {
           data: [attended, registered - attended],
-          backgroundColor: ['#388e3c', '#d32f2f'],
-          hoverBackgroundColor: ['#2e7d32', '#c62828']
+          backgroundColor: ['#4caf50', '#f44336'],
+          hoverBackgroundColor: ['#388e3c', '#d32f2f']
         }
       ]
     };
@@ -81,133 +101,260 @@ export default function AdminDashboard() {
     );
   };
 
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Admin Dashboard
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+          Admin Dashboard
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          Overview of system activities and statistics
+        </Typography>
+      </Box>
 
       {/* Quick Stats Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Quick Stats
-        </Typography>
-        {quickStats ? (
-          <Box>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              <strong>Total Events:</strong> {quickStats.totalEvents}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Approved Events:</strong> {quickStats.approvedEvents}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Total Attendance:</strong> {quickStats.totalAttendance}
-            </Typography>
-            <Typography variant="body2">
-              <strong>Total Users:</strong> {quickStats.totalUsers}
-            </Typography>
-          </Box>
-        ) : (
-          <Typography>Loading stats...</Typography>
-        )}
-      </Paper>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2} sx={{ height: '100%' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <EventIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" component="div">
+                    {quickStats?.totalEvents || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Events
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2} sx={{ height: '100%' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: 'success.main' }}>
+                  <CheckCircleIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" component="div">
+                    {quickStats?.approvedEvents || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Approved Events
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2} sx={{ height: '100%' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: 'info.main' }}>
+                  <PeopleIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" component="div">
+                    {quickStats?.totalAttendance || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Attendance
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2} sx={{ height: '100%' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: 'warning.main' }}>
+                  <TrendingUpIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" component="div">
+                    {quickStats?.totalUsers || 0}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Users
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-      {/* Recent Activity Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Recent Activity
-        </Typography>
-        {recentActivity.length ? (
-          recentActivity.map((activity) => (
-            <Box
-              key={activity.id}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottom: '1px solid #ddd',
-                py: 1
-              }}
-            >
-              <Box>
-                <Typography variant="body2">
-                  {activity.message}
+      <Grid container spacing={3}>
+        {/* Recent Activity Section */}
+        <Grid item xs={12} md={6}>
+          <Card elevation={2}>
+            <CardHeader
+              title="Recent Activity"
+              avatar={
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <NotificationsIcon />
+                </Avatar>
+              }
+            />
+            <Divider />
+            <CardContent>
+              {recentActivity.length ? (
+                <List>
+                  {recentActivity.map((activity) => (
+                    <ListItem
+                      key={activity.id}
+                      secondaryAction={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {activity.attended !== undefined &&
+                            activity.registered !== undefined &&
+                            renderDonutChart(activity.attended, activity.registered)}
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/manage-events?eventId=${activity.referenceId}`);
+                            }}
+                          >
+                            View
+                          </Button>
+                        </Stack>
+                      }
+                    >
+                      <ListItemText
+                        primary={activity.message}
+                        secondary={new Date(activity.createdAt).toLocaleString()}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary" align="center">
+                  No recent activity available
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(activity.createdAt).toLocaleString()}
-                </Typography>
-              </Box>
-              {activity.attended !== undefined &&
-                activity.registered !== undefined &&
-                renderDonutChart(activity.attended, activity.registered)}
-              <Button
-                variant="text"
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();                 // don’t trigger parent click / reload
-                  navigate(`/manage-events?eventId=${activity.referenceId}`);
-                }}
-              >
-                View
-              </Button>
-            </Box>
-          ))
-        ) : (
-          <Typography>No recent activity available.</Typography>
-        )}
-      </Paper>
-
-      {/* Daily Tasks Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Daily Tasks
-        </Typography>
-        {dailyTasks.length ? (
-          dailyTasks.map((task) => (
-            <Box
-              key={task.id}
-              sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}
-            >
-              <Typography variant="body1">
-                {task.done ? '✅' : '⬜'} {task.message}
-              </Typography>
-              {!task.done && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() =>
-                    setDailyTasks((prev) =>
-                      prev.map((t) =>
-                        t.id === task.id ? { ...t, done: true } : t
-                      )
-                    )
-                  }
-                >
-                  Mark Done
-                </Button>
               )}
-            </Box>
-          ))
-        ) : (
-          <Typography>No tasks for today. Good job!</Typography>
-        )}
-      </Paper>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      {/* Announcements Section */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Announcements
-        </Typography>
-        {announcements.length ? (
-          announcements.map((ann) => (
-            <Typography key={ann.id} variant="body1" sx={{ mb: 1 }}>
-              - {ann.message}
-            </Typography>
-          ))
-        ) : (
-          <Typography>No announcements.</Typography>
-        )}
-      </Paper>
+        {/* Daily Tasks Section */}
+        <Grid item xs={12} md={6}>
+          <Card elevation={2}>
+            <CardHeader
+              title="Daily Tasks"
+              avatar={
+                <Avatar sx={{ bgcolor: 'success.main' }}>
+                  <AssignmentIcon />
+                </Avatar>
+              }
+            />
+            <Divider />
+            <CardContent>
+              {dailyTasks.length ? (
+                <List>
+                  {dailyTasks.map((task) => (
+                    <ListItem
+                      key={task.id}
+                      secondaryAction={
+                        !task.done && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CheckBoxIcon />}
+                            onClick={() =>
+                              setDailyTasks((prev) =>
+                                prev.map((t) =>
+                                  t.id === task.id ? { ...t, done: true } : t
+                                )
+                              )
+                            }
+                          >
+                            Mark Done
+                          </Button>
+                        )
+                      }
+                    >
+                      <ListItemIcon>
+                        {task.done ? (
+                          <CheckBoxIcon color="success" />
+                        ) : (
+                          <CheckBoxOutlineBlankIcon />
+                        )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={task.message}
+                        sx={{
+                          textDecoration: task.done ? 'line-through' : 'none',
+                          color: task.done ? 'text.secondary' : 'text.primary'
+                        }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary" align="center">
+                  No tasks for today. Good job!
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Announcements Section */}
+        <Grid item xs={12}>
+          <Card elevation={2}>
+            <CardHeader
+              title="Announcements"
+              avatar={
+                <Avatar sx={{ bgcolor: 'info.main' }}>
+                  <NotificationsIcon />
+                </Avatar>
+              }
+            />
+            <Divider />
+            <CardContent>
+              {announcements.length ? (
+                <List>
+                  {announcements.map((ann) => (
+                    <ListItem key={ann.id}>
+                      <ListItemIcon>
+                        <NotificationsIcon color="info" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={ann.message}
+                        secondary={new Date(ann.createdAt).toLocaleString()}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography color="text.secondary" align="center">
+                  No announcements
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Container>
   );
 }

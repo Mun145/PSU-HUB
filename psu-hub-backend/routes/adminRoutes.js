@@ -14,6 +14,7 @@ router.get('/announcements',   auth, roleCheck('admin'), adminDashboard.getAnnou
 
 /* ───────── attendance toggle ───────── */
 router.patch( '/registrations/:id/mark-attended', auth, roleCheck('admin'), adminCtrl.markAsAttended );
+router.post('/chatbot', auth, roleCheck('admin'), adminCtrl.chatbotAssistant);
 
 /* ───────── certificates ───────── */
 router.post( '/certificates/:eventId/reissue/:userId', auth, roleCheck('admin'), certCtrl.reIssue);

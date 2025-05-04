@@ -8,8 +8,26 @@ import {
   Tabs,
   Tab,
   Collapse,
-  Paper
+  Paper,
+  Card,
+  CardContent,
+  Grid,
+  Chip,
+  Stack,
+  CircularProgress,
+  IconButton,
+  Tooltip
 } from '@mui/material';
+import {
+  BarChart as BarChartIcon,
+  Event as EventIcon,
+  CheckCircle as CheckCircleIcon,
+  Publish as PublishIcon,
+  Drafts as DraftsIcon,
+  Analytics as AnalyticsIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon
+} from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import AdminEventsTab from '../components/AdminEventsTab';
 import api from '../api/axiosInstance';
@@ -98,73 +116,150 @@ export default function ManageEventsView({
   const chartOptions = {
     maintainAspectRatio: false,
     responsive: true,
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
         Manage Events
       </Typography>
 
       {loading ? (
-        <Typography>Loading events...</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <CircularProgress />
+        </Box>
       ) : (
         <>
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Typography variant="body1" sx={{ mb: 1 }}>
-              <strong>All:</strong> {allEvents.length} &nbsp;|&nbsp;
-              <strong>Awaiting:</strong> {awaitingCount} &nbsp;|&nbsp;
-              <strong>Published:</strong> {publishedCount} &nbsp;|&nbsp;
-              <strong>Drafts:</strong> {draftCount}
-            </Typography>
-            <Button variant="outlined" onClick={handleToggleAnalytics} sx={{ mt: 1 }}>
-              {collapseAnalytics ? 'Hide Detailed Stats' : 'Show Detailed Stats'}
-            </Button>
-            <Collapse in={collapseAnalytics} unmountOnExit mountOnEnter>
-              {chartData ? (
-                <Box sx={{ width: '100%', height: 420, mt: 2 }}>
-                  <Line key={chartKey} data={chartData} options={chartOptions} />
+          <Card elevation={3} sx={{ mb: 3, borderRadius: 2 }}>
+            <CardContent>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={8}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Chip
+                      icon={<EventIcon />}
+                      label={`All: ${allEvents.length}`}
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<CheckCircleIcon />}
+                      label={`Awaiting: ${awaitingCount}`}
+                      color="warning"
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<PublishIcon />}
+                      label={`Published: ${publishedCount}`}
+                      color="success"
+                      variant="outlined"
+                    />
+                    <Chip
+                      icon={<DraftsIcon />}
+                      label={`Drafts: ${draftCount}`}
+                      color="default"
+                      variant="outlined"
+                    />
+                  </Stack>
+                </Grid>
+                <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+                  <Tooltip title={collapseAnalytics ? "Hide Analytics" : "Show Analytics"}>
+                    <IconButton
+                      onClick={handleToggleAnalytics}
+                      color="primary"
+                      sx={{ 
+                        transition: 'transform 0.3s',
+                        transform: collapseAnalytics ? 'rotate(180deg)' : 'rotate(0deg)'
+                      }}
+                    >
+                      {collapseAnalytics ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </Grid>
+              </Grid>
+
+              <Collapse in={collapseAnalytics} unmountOnExit mountOnEnter>
+                <Box sx={{ width: '100%', height: 420, mt: 3 }}>
+                  {chartData ? (
+                    <Line key={chartKey} data={chartData} options={chartOptions} />
+                  ) : (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: 'text.secondary'
+                    }}>
+                      <AnalyticsIcon sx={{ fontSize: 40, mb: 1 }} />
+                      <Typography>No analytics data available</Typography>
+                    </Box>
+                  )}
                 </Box>
-              ) : (
-                <Typography sx={{ mt: 2 }}>No analytics data.</Typography>
+              </Collapse>
+            </CardContent>
+          </Card>
+
+          <Paper elevation={3} sx={{ borderRadius: 2 }}>
+            <Tabs
+              value={adminTab}
+              onChange={handleAdminTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ 
+                borderBottom: 1, 
+                borderColor: 'divider',
+                '& .MuiTab-root': {
+                  minHeight: 48,
+                  textTransform: 'none',
+                  fontWeight: 'medium'
+                }
+              }}
+            >
+              <Tab icon={<EventIcon />} label="All" />
+              <Tab icon={<CheckCircleIcon />} label="Awaiting" />
+              <Tab icon={<PublishIcon />} label="Published" />
+              <Tab icon={<DraftsIcon />} label="Drafts" />
+              <Tab icon={<AnalyticsIcon />} label="Analytics" />
+            </Tabs>
+
+            <Box sx={{ p: 3 }}>
+              {adminTab !== 4 && (
+                <>
+                  {adminTab === 0 && (
+                    <AdminEventsTab list={allEvents} refetchEvents={refetchEvents} tabLabel="All" />
+                  )}
+                  {adminTab === 1 && (
+                    <AdminEventsTab list={awaitingEvents} isAwaiting refetchEvents={refetchEvents} tabLabel="Awaiting" />
+                  )}
+                  {adminTab === 2 && (
+                    <AdminEventsTab list={publishedEvents} refetchEvents={refetchEvents} tabLabel="Published" />
+                  )}
+                  {adminTab === 3 && (
+                    <AdminEventsTab list={draftEvents} refetchEvents={refetchEvents} tabLabel="Drafts" />
+                  )}
+                </>
               )}
-            </Collapse>
+
+              {adminTab === 4 && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  minHeight: 200,
+                  color: 'text.secondary'
+                }}>
+                  <BarChartIcon sx={{ fontSize: 40, mb: 1 }} />
+                  <Typography>Analytics are shown in the collapsible section above</Typography>
+                </Box>
+              )}
+            </Box>
           </Paper>
-
-          <Tabs
-            value={adminTab}
-            onChange={handleAdminTabChange}
-            sx={{ mb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
-          >
-            <Tab label="All" />
-            <Tab label="Awaiting" />
-            <Tab label="Published" />
-            <Tab label="Drafts" />
-            <Tab label="Analytics" />
-          </Tabs>
-
-          {adminTab !== 4 && (
-            <Paper sx={{ p: 3 }}>
-              {adminTab === 0 && (
-                <AdminEventsTab list={allEvents} refetchEvents={refetchEvents} tabLabel="All" />
-              )}
-              {adminTab === 1 && (
-                <AdminEventsTab list={awaitingEvents} isAwaiting refetchEvents={refetchEvents} tabLabel="Awaiting" />
-              )}
-              {adminTab === 2 && (
-                <AdminEventsTab list={publishedEvents} refetchEvents={refetchEvents} tabLabel="Published" />
-              )}
-              {adminTab === 3 && (
-                <AdminEventsTab list={draftEvents} refetchEvents={refetchEvents} tabLabel="Drafts" />
-              )}
-            </Paper>
-          )}
-
-          {adminTab === 4 && (
-            <Paper sx={{ p: 2, mt: 2 }}>
-              <Typography>Analytics are shown in the collapsible section above.</Typography>
-            </Paper>
-          )}
         </>
       )}
     </Container>
