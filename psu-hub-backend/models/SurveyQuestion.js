@@ -13,7 +13,7 @@ const SurveyQuestion = sequelize.define(
   },
   {
     tableName : 'SurveyQuestions',
-    timestamps: false                          // ← NO createdAt / updatedAt columns
+    timestamps: false                          
   }
 );
 
