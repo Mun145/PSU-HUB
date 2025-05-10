@@ -51,15 +51,16 @@ const Register = () => {
         <title>PSU Hub - Register</title>
       </Helmet>
       <Container 
-        maxWidth="sm" 
-        sx={{ 
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 4
-        }}
-      >
+  maxWidth="sm" 
+  sx={{ 
+    height: '100vh',         
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    py: 0                    
+  }}
+>
+
         <Paper 
           elevation={3} 
           sx={{ 

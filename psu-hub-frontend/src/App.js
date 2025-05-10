@@ -125,89 +125,91 @@ function App() {
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
 
-      {/* Top app bar */}
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` }
-        }}
+      {user && (
+  <AppBar
+    position="fixed"
+    sx={{
+      width: { sm: `calc(100% - ${drawerWidth}px)` },
+      ml: { sm: `${drawerWidth}px` }
+    }}
+  >
+    <Toolbar>
+      <IconButton
+        color="inherit"
+        edge="start"
+        onClick={handleDrawerToggle}
+        sx={{ mr: 2, display: { sm: 'none' } }}
       >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <span style={{ fontSize: '1.25rem' }}>☰</span>
-          </IconButton>
+        <span style={{ fontSize: '1.25rem' }}>☰</span>
+      </IconButton>
 
-          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
-            PSU Hub
-          </Typography>
+      <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
+        PSU Hub
+      </Typography>
 
-          <FormControlLabel
-            control={<Switch checked={darkMode} onChange={toggleDarkMode} />}
-            label="Dark"
-            sx={{ mr: 2 }}
+      <FormControlLabel
+        control={<Switch checked={darkMode} onChange={toggleDarkMode} />}
+        label="Dark"
+        sx={{ mr: 2 }}
+      />
+
+      <IconButton color="inherit" onClick={() => navigate('/profile')} sx={{ p: 0 }}>
+        {user?.profilePicture ? (
+          <Box
+            component="img"
+            src={user.profilePicture}
+            alt="User Avatar"
+            sx={{
+              width: 32,
+              height: 32,
+              objectFit: 'cover',
+              borderRadius: '50%'
+            }}
           />
+        ) : (
+          <span style={{ fontSize: '1.25rem' }}>👤</span>
+        )}
+      </IconButton>
+    </Toolbar>
+  </AppBar>
+)}
 
-          {user && (
-            <IconButton color="inherit" onClick={() => navigate('/profile')} sx={{ p: 0 }}>
-              {user.profilePicture ? (
-                <Box
-                  component="img"
-                  src={user.profilePicture}
-                  alt="User Avatar"
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    objectFit: 'cover',
-                    borderRadius: '50%'
-                  }}
-                />
-              ) : (
-                <span style={{ fontSize: '1.25rem' }}>👤</span>
-              )}
-            </IconButton>
-          )}
-        </Toolbar>
-      </AppBar>
 
-      {/* Drawer */}
-      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} aria-label="navigation">
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
-          }}
-        >
-          {drawer}
-        </Drawer>
+      {user && (
+  <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} aria-label="navigation">
+    <Drawer
+      variant="temporary"
+      open={mobileOpen}
+      onClose={handleDrawerToggle}
+      ModalProps={{ keepMounted: true }}
+      sx={{
+        display: { xs: 'block', sm: 'none' },
+        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
+      }}
+    >
+      {drawer}
+    </Drawer>
 
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
+    <Drawer
+      variant="permanent"
+      sx={{
+        display: { xs: 'none', sm: 'block' },
+        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
+      }}
+      open
+    >
+      {drawer}
+    </Drawer>
+  </Box>
+)}
 
     {/* ───────── Main content area ───────── */}
 <Box
   component="main"
   sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
 >
-  <Toolbar />
+  {user && <Toolbar />}
+
 
   <Suspense fallback={<div>Loading...</div>}>
     <Routes>
